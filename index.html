@@ -361,6 +361,20 @@
               </div>
             </div>
 
+            <!-- Class Goal -->
+            <div id="class-goal-section" class="hidden max-w-2xl mx-auto mb-6">
+              <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-xl">🎯</span>
+                  <h3 id="class-goal-title" class="font-bold text-gray-800"></h3>
+                </div>
+                <div class="h-3 bg-blue-100 rounded-full overflow-hidden mb-2">
+                  <div id="class-goal-bar" class="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all" style="width: 0%"></div>
+                </div>
+                <p id="class-goal-progress" class="text-sm text-gray-600 text-right"></p>
+              </div>
+            </div>
+
             <!-- Weekly Missions -->
             <div id="weekly-missions-section" class="max-w-2xl mx-auto mb-8 hidden">
               <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
@@ -983,6 +997,7 @@
             checkDoubleXP();
             checkStreakRecovery();
             renderClassFeed();
+            renderClassGoal();
             if (typeof Gamification !== 'undefined' && Gamification.applyPerks) {
                 Gamification.applyPerks();
             }
@@ -1143,6 +1158,46 @@
                 list.appendChild(row);
               }
             });
+          });
+        }
+
+        function renderClassGoal() {
+          var student = FirebaseSync.getStudent();
+          if (!student || !student.classCode) return;
+
+          FirebaseSync.getClassGoal(student.classCode).then(function(goal) {
+            if (!goal) return;
+
+            // Check deadline
+            if (goal.deadline) {
+              var deadline = new Date(goal.deadline);
+              if (Date.now() > deadline.getTime()) return; // Expired
+            }
+
+            var section = document.getElementById("class-goal-section");
+            if (!section) return;
+            section.classList.remove("hidden");
+
+            var metricLabels = {
+              exercises_completed: "exercises",
+              xp_earned: "XP",
+              students_at_level: "students",
+              topics_completed: "topics"
+            };
+
+            var label = metricLabels[goal.metric] || goal.metric;
+            document.getElementById("class-goal-title").textContent =
+              "Class Goal: " + goal.target + " " + label;
+
+            var current = Math.min(goal.current || 0, goal.target);
+            var pct = Math.round((current / goal.target) * 100);
+            document.getElementById("class-goal-bar").style.width = pct + "%";
+            document.getElementById("class-goal-progress").textContent = current + " / " + goal.target;
+
+            // Check if goal just completed
+            if (current >= goal.target) {
+              document.getElementById("class-goal-title").textContent += " — Completed! 🎉";
+            }
           });
         }
 
