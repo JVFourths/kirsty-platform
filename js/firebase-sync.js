@@ -292,9 +292,9 @@ var FirebaseSync = (function () {
     function isLoggedIn() {
         // Check Firebase Auth state first
         if (_currentUser) return true;
-        // Fall back to localStorage
+        // Fall back to localStorage — student code login has id but no email
         var student = getStudent();
-        return student && student.email;
+        return student && (student.email || student.id);
     }
 
     /**
@@ -700,6 +700,262 @@ var FirebaseSync = (function () {
         });
     }
 
+    /* ── Student Code Authentication ── */
+
+    var CODE_CHARSET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+    function _randomCode(length) {
+        var result = "";
+        for (var i = 0; i < length; i++) {
+            result += CODE_CHARSET.charAt(Math.floor(Math.random() * CODE_CHARSET.length));
+        }
+        return result;
+    }
+
+    /**
+     * Generate a unique student code for a class.
+     * Format: {classCode}-{4 random chars}
+     */
+    function generateStudentCode(classCode) {
+        if (!_enabled || !db) return Promise.reject(new Error("Firebase not configured"));
+        classCode = (classCode || "").trim().toUpperCase();
+        if (!classCode) return Promise.reject(new Error("Class code is required"));
+
+        function tryGenerate() {
+            var code = classCode + "-" + _randomCode(4);
+            return db.collection("students").doc(code).get().then(function (doc) {
+                if (doc.exists) {
+                    // Collision — try again
+                    return tryGenerate();
+                }
+                return code;
+            });
+        }
+
+        return tryGenerate();
+    }
+
+    /**
+     * Bulk-create student codes for a class.
+     */
+    function createStudentCodes(classCode, count) {
+        if (!_enabled || !db) return Promise.reject(new Error("Firebase not configured"));
+        classCode = (classCode || "").trim().toUpperCase();
+        count = Math.min(Math.max(parseInt(count) || 1, 1), 50);
+
+        var results = [];
+        var chain = Promise.resolve();
+
+        for (var i = 0; i < count; i++) {
+            (function (index) {
+                chain = chain.then(function () {
+                    return generateStudentCode(classCode).then(function (code) {
+                        var nickname = "Student " + (index + 1);
+                        var docData = {
+                            classCode: classCode,
+                            nickname: nickname,
+                            nicknameSet: false,
+                            totalXP: 0,
+                            level: 1,
+                            currentStreak: 0,
+                            longestStreak: 0,
+                            totalExercises: 0,
+                            weeklyXP: 0,
+                            weekStartDate: "",
+                            earnedBadges: [],
+                            completedExerciseIds: [],
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            lastSynced: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        return db.collection("students").doc(code).set(docData).then(function () {
+                            results.push({ code: code, nickname: nickname });
+                        });
+                    });
+                });
+            })(i);
+        }
+
+        return chain.then(function () {
+            return results;
+        });
+    }
+
+    /**
+     * Create a single student code with an optional nickname.
+     */
+    function createSingleStudentCode(classCode, nickname) {
+        if (!_enabled || !db) return Promise.reject(new Error("Firebase not configured"));
+        classCode = (classCode || "").trim().toUpperCase();
+        nickname = (nickname || "").trim() || "Student";
+
+        return generateStudentCode(classCode).then(function (code) {
+            var docData = {
+                classCode: classCode,
+                nickname: nickname,
+                nicknameSet: false,
+                totalXP: 0,
+                level: 1,
+                currentStreak: 0,
+                longestStreak: 0,
+                totalExercises: 0,
+                weeklyXP: 0,
+                weekStartDate: "",
+                earnedBadges: [],
+                completedExerciseIds: [],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastSynced: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            return db.collection("students").doc(code).set(docData).then(function () {
+                return { code: code, nickname: nickname };
+            });
+        });
+    }
+
+    /**
+     * Log in with a student code.
+     * Reads the student doc from Firestore, saves to localStorage.
+     */
+    function loginWithCode(code) {
+        code = (code || "").trim().toUpperCase();
+        if (!code) return Promise.resolve(null);
+
+        if (!_enabled || !db) {
+            // Offline fallback — check localStorage
+            var existing = getStudent();
+            if (existing && existing.id === code) return Promise.resolve(existing);
+            return Promise.resolve(null);
+        }
+
+        return db.collection("students").doc(code).get().then(function (doc) {
+            if (!doc.exists) return null;
+
+            var data = doc.data();
+            var student = {
+                id: code,
+                nickname: data.nickname || "Student",
+                classCode: data.classCode || "",
+                nicknameSet: data.nicknameSet || false
+            };
+            saveStudent(student);
+
+            // Load gamification profile if data exists
+            if (typeof Gamification !== "undefined") {
+                Gamification.setNickname(student.nickname);
+
+                // Restore game state from Firestore data
+                var gameData = null;
+                try {
+                    gameData = localStorage.getItem("pythonlab_game");
+                    gameData = gameData ? JSON.parse(gameData) : {};
+                } catch (e) {
+                    gameData = {};
+                }
+
+                // Merge Firestore data into local game state
+                gameData.totalXP = data.totalXP || 0;
+                gameData.currentStreak = data.currentStreak || 0;
+                gameData.longestStreak = data.longestStreak || 0;
+                gameData.totalExercises = data.totalExercises || 0;
+                gameData.weeklyXP = data.weeklyXP || 0;
+                gameData.weekStartDate = data.weekStartDate || "";
+                gameData.nickname = student.nickname;
+
+                // Restore earned badges
+                if (data.earnedBadges && data.earnedBadges.length > 0) {
+                    var badges = gameData.earnedBadges || {};
+                    for (var b = 0; b < data.earnedBadges.length; b++) {
+                        if (!badges[data.earnedBadges[b]]) {
+                            badges[data.earnedBadges[b]] = new Date().toISOString();
+                        }
+                    }
+                    gameData.earnedBadges = badges;
+                }
+
+                try {
+                    localStorage.setItem("pythonlab_game", JSON.stringify(gameData));
+                } catch (e) {}
+
+                // Restore completed exercises into progress
+                if (data.completedExerciseIds && data.completedExerciseIds.length > 0) {
+                    var progressData = null;
+                    try {
+                        progressData = localStorage.getItem("pythonlab_progress");
+                        progressData = progressData ? JSON.parse(progressData) : {};
+                    } catch (e) {
+                        progressData = {};
+                    }
+
+                    for (var p = 0; p < data.completedExerciseIds.length; p++) {
+                        var exId = data.completedExerciseIds[p];
+                        if (!progressData[exId]) {
+                            progressData[exId] = { completed: true, timestamp: new Date().toISOString() };
+                        }
+                    }
+
+                    try {
+                        localStorage.setItem("pythonlab_progress", JSON.stringify(progressData));
+                    } catch (e) {}
+                }
+            }
+
+            return student;
+        }).catch(function (err) {
+            console.warn("Python Lab: loginWithCode failed —", err.message);
+            return null;
+        });
+    }
+
+    /**
+     * Get all student codes for a class.
+     */
+    function getStudentCodes(classCode) {
+        if (!_enabled || !db) return Promise.resolve([]);
+        classCode = (classCode || "").trim().toUpperCase();
+        return db.collection("students")
+            .where("classCode", "==", classCode)
+            .get()
+            .then(function (snapshot) {
+                var students = [];
+                snapshot.forEach(function (doc) {
+                    var data = doc.data();
+                    students.push({
+                        code: doc.id,
+                        nickname: data.nickname || "Student",
+                        nicknameSet: data.nicknameSet || false,
+                        totalXP: data.totalXP || 0,
+                        lastSynced: data.lastSynced || null
+                    });
+                });
+                return students;
+            })
+            .catch(function (err) {
+                console.warn("Python Lab: getStudentCodes failed —", err.message);
+                return [];
+            });
+    }
+
+    /**
+     * Regenerate a student code (keep all data, new code).
+     */
+    function regenerateStudentCode(oldCode, classCode) {
+        if (!_enabled || !db) return Promise.reject(new Error("Firebase not configured"));
+
+        return db.collection("students").doc(oldCode).get().then(function (doc) {
+            if (!doc.exists) return Promise.reject(new Error("Student not found"));
+            var oldData = doc.data();
+
+            return generateStudentCode(classCode).then(function (newCode) {
+                // Create new doc with all old data
+                return db.collection("students").doc(newCode).set(oldData).then(function () {
+                    // Delete old doc
+                    return db.collection("students").doc(oldCode).delete().then(function () {
+                        return newCode;
+                    });
+                });
+            });
+        });
+    }
+
     /* ── Export ── */
     return {
         init: init,
@@ -733,6 +989,12 @@ var FirebaseSync = (function () {
         getClassSettings: getClassSettings,
         updateClassSettings: updateClassSettings,
         getLeaderboard: getLeaderboard,
+        generateStudentCode: generateStudentCode,
+        createStudentCodes: createStudentCodes,
+        createSingleStudentCode: createSingleStudentCode,
+        loginWithCode: loginWithCode,
+        getStudentCodes: getStudentCodes,
+        regenerateStudentCode: regenerateStudentCode,
         get enabled() { return _enabled; },
         get currentUser() { return _currentUser; },
         get db() { return db; }
