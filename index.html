@@ -444,6 +444,21 @@
                     </div>
                 </a>
             </div>
+
+            <!-- Class Activity Feed -->
+            <div id="class-feed-section" class="hidden max-w-2xl mx-auto mt-8">
+              <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4 cursor-pointer" onclick="toggleFeed()">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">📣</span>
+                    <h2 class="text-lg font-bold text-gray-800">Class Activity</h2>
+                  </div>
+                  <span id="feed-toggle-icon" class="text-gray-400">▼</span>
+                </div>
+                <div id="class-feed-list" class="space-y-2"></div>
+              </div>
+            </div>
+
         </main>
     </div>
 
@@ -967,6 +982,7 @@
             renderWeeklyMissions();
             checkDoubleXP();
             checkStreakRecovery();
+            renderClassFeed();
             if (typeof Gamification !== 'undefined' && Gamification.applyPerks) {
                 Gamification.applyPerks();
             }
@@ -1082,6 +1098,63 @@
           // Show chest badge if all complete
           if (result.allComplete) {
             document.getElementById("weekly-chest-badge").classList.remove("hidden");
+          }
+        }
+
+        function renderClassFeed() {
+          var student = FirebaseSync.getStudent();
+          if (!student || !student.classCode) return;
+
+          FirebaseSync.getClassSettings(student.classCode).then(function(settings) {
+            if (!settings.feedEnabled) return;
+
+            var section = document.getElementById("class-feed-section");
+            if (section) section.classList.remove("hidden");
+
+            FirebaseSync.getFeed(student.classCode).then(function(entries) {
+              var list = document.getElementById("class-feed-list");
+              if (!list) return;
+              list.innerHTML = "";
+
+              if (entries.length === 0) {
+                list.innerHTML = '<p class="text-sm text-gray-400">No recent activity</p>';
+                return;
+              }
+
+              var icons = { badge: "🏅", level: "⬆️", topic: "📚" };
+              for (var i = 0; i < entries.length; i++) {
+                var e = entries[i];
+                var icon = icons[e.type] || "📌";
+                var row = document.createElement("div");
+                row.className = "flex items-center gap-2 text-sm text-gray-600 py-1";
+                // Use textContent to avoid XSS from user-controlled nicknames
+                var iconSpan = document.createElement("span");
+                iconSpan.textContent = icon;
+                var textSpan = document.createElement("span");
+                var nickname = e.studentNickname || "Someone";
+                var action = e.type === "badge" ? "earned " : e.type === "level" ? "reached " : "completed ";
+                var detail = e.detail || "";
+                var bold = document.createElement("strong");
+                bold.textContent = nickname;
+                textSpan.appendChild(bold);
+                textSpan.appendChild(document.createTextNode(" " + action + detail));
+                row.appendChild(iconSpan);
+                row.appendChild(textSpan);
+                list.appendChild(row);
+              }
+            });
+          });
+        }
+
+        function toggleFeed() {
+          var list = document.getElementById("class-feed-list");
+          var icon = document.getElementById("feed-toggle-icon");
+          if (list.style.display === "none") {
+            list.style.display = "";
+            icon.textContent = "▼";
+          } else {
+            list.style.display = "none";
+            icon.textContent = "▶";
           }
         }
 
