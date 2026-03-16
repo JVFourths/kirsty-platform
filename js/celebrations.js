@@ -134,7 +134,9 @@ var Celebrations = (function () {
       popup.className = "xp-popup lucky-xp";
       popup.innerHTML = "\u2728 Lucky +" + xp + " XP! \u2728";
 
-      var rect = targetEl.getBoundingClientRect();
+      var rect = targetEl
+          ? targetEl.getBoundingClientRect()
+          : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0 };
       popup.style.left = rect.left + rect.width / 2 + "px";
       popup.style.top = rect.top + "px";
       document.body.appendChild(popup);

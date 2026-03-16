@@ -920,7 +920,27 @@ var Gamification = (function () {
             m.progress = data.dailyChallengesCompleted - (m.startCount || 0);
             break;
           case "topic":
-            // Checked separately via topic completion
+            // Check if any topic is now fully completed
+            if (typeof EXERCISES !== "undefined") {
+              var tyears = ["7", "8", "9", "gcse"];
+              for (var ty = 0; ty < tyears.length; ty++) {
+                var tyData = EXERCISES[tyears[ty]];
+                if (!tyData) continue;
+                for (var tt = 0; tt < tyData.topics.length; tt++) {
+                  var tTopic = tyData.topics[tt];
+                  if (tTopic.exercises.length === 0) continue;
+                  var tAllDone = true;
+                  for (var te = 0; te < tTopic.exercises.length; te++) {
+                    if (!data.completedExercises[tTopic.exercises[te].id]) { tAllDone = false; break; }
+                  }
+                  if (tAllDone) {
+                    m.progress = 1;
+                    break;
+                  }
+                }
+                if (m.progress >= m.target) break;
+              }
+            }
             break;
         }
         // Cap progress at target

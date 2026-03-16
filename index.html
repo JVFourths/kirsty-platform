@@ -721,15 +721,27 @@
                     <p class="text-xs text-amber-700 mt-0.5">
                         Longest streak: <strong id="longest-streak">0</strong> days
                         &nbsp;&middot;&nbsp;
-                        Streak freezes remaining: <strong id="streak-freezes">1</strong>
+                        Streak Recovery: <strong id="streak-recovery">Recovery available</strong>
                     </p>
                 </div>
+            </div>
+
+            <!-- Streak Calendar -->
+            <div class="mb-10">
+              <h4 class="text-sm font-semibold text-gray-600 mb-2">Last 30 Days</h4>
+              <div id="streak-calendar" class="flex gap-1 flex-wrap"></div>
             </div>
 
             <!-- Badges -->
             <div class="mb-10">
                 <h2 class="text-lg font-bold text-slate-900 mb-4">Badges</h2>
                 <div id="badge-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3"></div>
+            </div>
+
+            <!-- Customise Section -->
+            <div class="mt-8 mb-10">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">🎨 Customise</h3>
+              <div id="perk-list" class="space-y-3"></div>
             </div>
 
             <!-- Level progression -->
@@ -1294,7 +1306,7 @@
           });
         }
 
-        function toggleFeed() {
+        window.toggleFeed = function toggleFeed() {
           var list = document.getElementById("class-feed-list");
           var icon = document.getElementById("feed-toggle-icon");
           if (list.style.display === "none") {
@@ -1304,7 +1316,7 @@
             list.style.display = "none";
             icon.textContent = "▶";
           }
-        }
+        };
 
         /* ── LOGIN view ── */
         function initLogin() {
@@ -1926,7 +1938,13 @@
                     : "You're on a " + profile.currentStreak + ' day streak! Keep it up!';
             document.getElementById('streak-message').textContent = streakMsg;
             document.getElementById('longest-streak').textContent = profile.longestStreak;
-            document.getElementById('streak-freezes').textContent = profile.streakFreezes;
+            var recoveryEl = document.getElementById('streak-recovery');
+            if (recoveryEl) {
+                recoveryEl.textContent = profile.streakRecoveryAvailable ? 'Recovery available' : 'Recovery used this month';
+            }
+
+            // Streak Calendar
+            renderStreakCalendar(profile);
 
             // Badges
             var badgeGrid = document.getElementById('badge-grid');
@@ -1962,7 +1980,85 @@
                 levelList.appendChild(row);
             }
 
+            // Streak Calendar
+            renderStreakCalendar(profile);
+
+            // Perks
+            renderPerks();
+            Gamification.applyPerks();
+
             updateHeaderStats();
+        }
+
+        function renderStreakCalendar(profile) {
+            var container = document.getElementById("streak-calendar");
+            if (!container) return;
+            var history = profile.activityHistory || [];
+            container.innerHTML = "";
+
+            var today = new Date();
+            var milestones = [3, 7, 14, 30];
+
+            for (var i = 29; i >= 0; i--) {
+                var d = new Date(today);
+                d.setDate(d.getDate() - i);
+                var dateStr = d.toISOString().split("T")[0];
+                var dot = document.createElement("div");
+                dot.className = "w-3 h-3 rounded-full ";
+                dot.title = dateStr;
+
+                if (history.indexOf(dateStr) !== -1) {
+                    var consecutiveDays = 0;
+                    for (var c = 0; c <= 29 - i; c++) {
+                        var checkDate = new Date(today);
+                        checkDate.setDate(checkDate.getDate() - i - c);
+                        if (history.indexOf(checkDate.toISOString().split("T")[0]) !== -1) {
+                            consecutiveDays++;
+                        } else {
+                            break;
+                        }
+                    }
+                    var isMilestone = milestones.indexOf(consecutiveDays) !== -1;
+                    dot.className += isMilestone ? "bg-amber-400" : "bg-green-500";
+                } else {
+                    dot.className += "bg-gray-200";
+                }
+                container.appendChild(dot);
+            }
+        }
+
+        function renderPerks() {
+            var perks = Gamification.getLevelPerks();
+            var container = document.getElementById("perk-list");
+            if (!container) return;
+            container.innerHTML = "";
+
+            for (var i = 0; i < perks.length; i++) {
+                var p = perks[i];
+                var card = document.createElement("div");
+                card.className = "p-4 border rounded-xl " + (p.unlocked ? "bg-white" : "bg-gray-50 opacity-60");
+                var html = '<div class="flex items-center justify-between">' +
+                    '<div>' +
+                        '<span class="font-semibold text-gray-800">' + p.label + '</span>' +
+                        '<span class="text-xs text-gray-500 ml-2">Level ' + p.level + '</span>' +
+                    '</div>';
+
+                if (p.unlocked) {
+                    html += '<select class="text-sm border rounded px-2 py-1" onchange="Gamification.selectPerk(\'' + p.id + '\', this.value); Gamification.applyPerks()">';
+                    html += '<option value="">Default</option>';
+                    for (var o = 0; o < p.options.length; o++) {
+                        var sel = p.selected === p.options[o] ? " selected" : "";
+                        html += '<option value="' + p.options[o] + '"' + sel + '>' + p.options[o] + '</option>';
+                    }
+                    html += '</select>';
+                } else {
+                    html += '<span class="text-sm text-gray-400">\uD83D\uDD12 Locked</span>';
+                }
+
+                html += '</div>';
+                card.innerHTML = html;
+                container.appendChild(card);
+            }
         }
 
         /* ── TEACHER view ── */

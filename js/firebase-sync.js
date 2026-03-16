@@ -548,7 +548,7 @@ var FirebaseSync = (function () {
       } else {
         update.doubleXPExpiry = null;
       }
-      return db.collection("classes").doc(classCode).update(update);
+      return db.collection("classes").doc(classCode).set(update, { merge: true });
     }
 
     function getDoubleXPStatus(classCode) {
@@ -568,7 +568,7 @@ var FirebaseSync = (function () {
     /* ── Topic Unlock Override ── */
     function setTopicUnlockOverride(classCode, override) {
         if (!_enabled || !db) return Promise.resolve();
-        return db.collection("classes").doc(classCode).update({ topicUnlockOverride: override });
+        return db.collection("classes").doc(classCode).set({ topicUnlockOverride: override }, { merge: true });
     }
 
     function setStudentTopicUnlockOverride(studentId, override) {
