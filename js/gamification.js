@@ -445,6 +445,9 @@ var Gamification = (function () {
           newBadges.push(mysteryBadges[m]);
         }
 
+        // Update weekly mission progress
+        _updateMissionProgress(data, exerciseType, xp);
+
         var newLevelData = getLevel(data.totalXP);
         var leveledUp = newLevelData.level > oldLevel;
 
@@ -631,6 +634,187 @@ var Gamification = (function () {
     }
 
     /* ═══════════════════════════════════════════
+       WEEKLY MISSIONS
+       ═══════════════════════════════════════════ */
+
+    var MISSION_TEMPLATES = [
+      { type: "xp", label: "Earn {target} XP this week", minTarget: 50, maxTarget: 150 },
+      { type: "exercise_count", label: "Complete {target} exercises this week", minTarget: 3, maxTarget: 8 },
+      { type: "type_specific", label: "Finish {target} {subtype} exercises", minTarget: 2, maxTarget: 4, subtypes: ["Investigate", "Modify", "Make"] },
+      { type: "streak", label: "Maintain a {target} day streak", minTarget: 3, maxTarget: 5 },
+      { type: "topic", label: "Complete all exercises in one topic", minTarget: 1, maxTarget: 1 },
+      { type: "daily_challenge", label: "Complete {target} daily challenges", minTarget: 2, maxTarget: 4 }
+    ];
+
+    function _scaleTarget(min, max, level) {
+      // Levels 1-3: lower third, 4-6: middle, 7-10: upper
+      var range = max - min;
+      var scale = Math.min(level / 10, 1);
+      return Math.round(min + range * scale);
+    }
+
+    function _isMissionFeasible(template, data) {
+      if (template.type === "topic") {
+        // Only offer if student has a topic with >= 50% but not 100%
+        if (typeof EXERCISES === "undefined") return false;
+        var years = ["7", "8", "9", "gcse"];
+        for (var y = 0; y < years.length; y++) {
+          var yearData = EXERCISES[years[y]];
+          if (!yearData) continue;
+          for (var t = 0; t < yearData.topics.length; t++) {
+            var topic = yearData.topics[t];
+            var done = 0;
+            for (var e = 0; e < topic.exercises.length; e++) {
+              if (data.completedExercises[topic.exercises[e].id]) done++;
+            }
+            var pct = topic.exercises.length > 0 ? done / topic.exercises.length : 0;
+            if (pct >= 0.5 && pct < 1) return true;
+          }
+        }
+        return false;
+      }
+      if (template.type === "streak") {
+        // Remaining days in the week (Mon=1 to Sun=7)
+        var today = new Date().getDay(); // 0=Sun, 1=Mon...
+        var remaining = today === 0 ? 1 : 7 - today + 1;
+        if (remaining < template.minTarget) return false;
+      }
+      return true;
+    }
+
+    function _generateMissions(data) {
+      var level = getLevel(data.totalXP).level;
+      var feasible = [];
+      for (var i = 0; i < MISSION_TEMPLATES.length; i++) {
+        if (_isMissionFeasible(MISSION_TEMPLATES[i], data)) {
+          feasible.push(MISSION_TEMPLATES[i]);
+        }
+      }
+
+      // Shuffle feasible missions
+      for (var s = feasible.length - 1; s > 0; s--) {
+        var j = Math.floor(Math.random() * (s + 1));
+        var temp = feasible[s];
+        feasible[s] = feasible[j];
+        feasible[j] = temp;
+      }
+
+      var selected = [];
+      var usedTypes = {};
+      for (var f = 0; f < feasible.length && selected.length < 3; f++) {
+        if (!usedTypes[feasible[f].type]) {
+          usedTypes[feasible[f].type] = true;
+          var tmpl = feasible[f];
+          var mission = { type: tmpl.type, target: _scaleTarget(tmpl.minTarget, tmpl.maxTarget, level), progress: 0 };
+
+          // Build label
+          var label = tmpl.label.replace("{target}", mission.target);
+          if (tmpl.type === "type_specific") {
+            var subIdx = Math.floor(Math.random() * tmpl.subtypes.length);
+            mission.subtype = tmpl.subtypes[subIdx].toLowerCase();
+            label = label.replace("{subtype}", tmpl.subtypes[subIdx]);
+          }
+          mission.label = label;
+
+          // For daily_challenge missions, store the starting count so progress is weekly not cumulative
+          if (tmpl.type === "daily_challenge") {
+            mission.startCount = data.dailyChallengesCompleted || 0;
+          }
+
+          selected.push(mission);
+        }
+      }
+
+      // Fill remaining slots with XP or exercise_count if needed
+      while (selected.length < 3) {
+        var fillType = selected.length % 2 === 0 ? "xp" : "exercise_count";
+        var fillTmpl = null;
+        for (var ft = 0; ft < MISSION_TEMPLATES.length; ft++) {
+          if (MISSION_TEMPLATES[ft].type === fillType) { fillTmpl = MISSION_TEMPLATES[ft]; break; }
+        }
+        if (fillTmpl) {
+          var fillMission = {
+            type: fillTmpl.type,
+            target: _scaleTarget(fillTmpl.minTarget, fillTmpl.maxTarget, level),
+            progress: 0,
+            label: fillTmpl.label.replace("{target}", _scaleTarget(fillTmpl.minTarget, fillTmpl.maxTarget, level))
+          };
+          selected.push(fillMission);
+        } else {
+          break;
+        }
+      }
+
+      return selected;
+    }
+
+    function getWeeklyMissions() {
+      var data = _load();
+      var mondayDate = _weekStart();
+
+      // Generate new missions if it's a new week
+      if (data.weeklyMissionsGeneratedDate !== mondayDate) {
+        data.weeklyMissions = _generateMissions(data);
+        data.weeklyMissionsGeneratedDate = mondayDate;
+        _save(data);
+      }
+
+      return {
+        missions: data.weeklyMissions,
+        chestsEarned: data.weeklyChestsEarned,
+        allComplete: _allMissionsComplete(data.weeklyMissions)
+      };
+    }
+
+    function _allMissionsComplete(missions) {
+      if (!missions || missions.length === 0) return false;
+      for (var i = 0; i < missions.length; i++) {
+        if (missions[i].progress < missions[i].target) return false;
+      }
+      return true;
+    }
+
+    function _updateMissionProgress(data, exerciseType, xpGained) {
+      if (!data.weeklyMissions || data.weeklyMissions.length === 0) return;
+      var wereAllComplete = _allMissionsComplete(data.weeklyMissions);
+
+      for (var i = 0; i < data.weeklyMissions.length; i++) {
+        var m = data.weeklyMissions[i];
+        switch (m.type) {
+          case "xp":
+            m.progress = m.progress + xpGained;
+            break;
+          case "exercise_count":
+            m.progress = m.progress + 1;
+            break;
+          case "type_specific":
+            if (exerciseType === m.subtype) {
+              m.progress = m.progress + 1;
+            }
+            break;
+          case "streak":
+            m.progress = data.currentStreak;
+            break;
+          case "daily_challenge":
+            // Track weekly count using startCount delta
+            m.progress = data.dailyChallengesCompleted - (m.startCount || 0);
+            break;
+          case "topic":
+            // Checked separately via topic completion
+            break;
+        }
+        // Cap progress at target
+        if (m.progress > m.target) m.progress = m.target;
+      }
+
+      // Check if all missions just completed (award weekly chest)
+      if (!wereAllComplete && _allMissionsComplete(data.weeklyMissions)) {
+        data.weeklyChestsEarned = data.weeklyChestsEarned + 1;
+        data.totalXP = data.totalXP + 50;
+      }
+    }
+
+    /* ═══════════════════════════════════════════
        DAILY CHALLENGE
        ═══════════════════════════════════════════ */
 
@@ -696,6 +880,7 @@ var Gamification = (function () {
         getTodaysChallenge: getTodaysChallenge,
         isDailyChallengeComplete: isDailyChallengeComplete,
         completeDailyChallenge: completeDailyChallenge,
+        getWeeklyMissions: getWeeklyMissions,
         BADGES: BADGES,
         LEVELS: LEVELS,
         XP_REWARDS: XP_REWARDS
