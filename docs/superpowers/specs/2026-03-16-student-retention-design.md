@@ -16,7 +16,7 @@ Root causes identified:
 - **No features removed** — Everything is purely additive; existing features stay untouched
 - **Teacher-controlled social features** — Social/competitive features are off by default; teachers opt in per class
 - **CSS-only cosmetics** — No art assets or external images required for visual unlocks
-- **Existing tech stack** — Vanilla JS, localStorage + Firestore, no new dependencies
+- **Existing tech stack** — Vanilla ES5 JavaScript (no `let`/`const`/arrow functions/classes), localStorage + Firestore, no new dependencies
 - **Existing data patterns** — New data stored in the same `pythonlab_game` / `pythonlab_progress` localStorage objects and synced to Firestore using existing patterns
 
 ## Solution Overview
@@ -38,7 +38,7 @@ Three phases, each addressing a different retention lever:
 A single standalone exercise appears on the landing page each day, separate from topic progression.
 
 **Behaviour:**
-- A curated pool of ~30 standalone exercises stored in `data/exercises.js` as a new `DAILY_CHALLENGES` array
+- A curated pool of ~30 standalone exercises stored in a new file `data/daily-challenges.js` as a `DAILY_CHALLENGES` array (loaded via `<script>` tag)
 - One exercise is selected per day using `dayOfYear % pool.length` (deterministic — all students see the same challenge)
 - Displayed as a prominent card on `index.html` above the year group icons, with the title "Today's Challenge" and a countdown showing hours remaining until the next one
 - Completing the daily challenge awards 15 bonus XP on top of the normal exercise XP
@@ -68,10 +68,11 @@ Small random bonuses that make each session feel unpredictable.
 
 **Double XP events (teacher-controlled):**
 - Teachers toggle "Double XP" for their class from the teacher dashboard
-- Stored as a `doubleXP: true/false` field on the class Firestore document
+- Stored on the class Firestore document as `doubleXP: true/false` and `doubleXPExpiry: <timestamp|null>`
 - When active, a banner appears on the student's landing page: "Double XP active!"
 - All XP earned during a Double XP event is doubled
 - Teacher can set a duration (1 hour, rest of lesson, rest of day) or manually toggle off
+- Duration-based events auto-expire: client checks `doubleXPExpiry` timestamp before applying the multiplier. If current time > expiry, Double XP is inactive regardless of the `doubleXP` flag
 
 **Mystery badges (automatic):**
 - 3-5 hidden badges with secret unlock conditions, not visible in the badge gallery until earned
@@ -82,6 +83,9 @@ Small random bonuses that make each session feel unpredictable.
   - "Perfectionist" — get 10 predictions correct in a row (cumulative, not necessarily in one session)
   - "Early Bird" — complete an exercise before 8am local time
   - "Marathon Runner" — spend 60+ minutes on exercises in one session
+
+**Session definition for mystery badges:**
+A "session" starts when the student opens any exercise page (sets `sessionStartTime` if null) and resets when the browser tab is closed or after 2 hours of inactivity (no exercise completions). Since these values are in localStorage, a page refresh preserves the session. The `sessionStartTime` is set on first exercise completion if currently null, and `sessionExerciseCount` increments on each completion. Both are cleared when `Date.now() - sessionStartTime > 2 hours`.
 
 **Data model additions to `pythonlab_game`:**
 ```javascript
@@ -107,6 +111,7 @@ Three small goals each week that give students a concrete checklist.
   - **Topic mission**: "Complete all exercises in one topic"
   - **Daily challenge mission**: "Complete {2-4} daily challenges this week"
 - 3 missions are randomly selected each week (no duplicates of the same category)
+- Mission selection validates feasibility: "topic mission" is only offered if the student has a topic with at least 50% progress but not yet complete; "streak mission" targets never exceed the remaining days in the week (e.g. a mission generated on Wednesday can target at most a 5-day streak). If fewer than 3 feasible missions are available, fill remaining slots with XP or exercise count missions (always feasible)
 - Targets scale with the student's level: Level 1-3 gets easier targets, Level 7-10 gets harder ones
 - Each mission shows a progress indicator (e.g. "2/3 complete") and fills in as progress is made
 - Completing all 3 missions awards a **Weekly Chest**: 50 bonus XP + a "Weekly Champion" badge variant:
@@ -153,7 +158,7 @@ Later topics appear locked to create curiosity and forward momentum.
 - **Direct URL access**: If a student navigates directly to an exercise URL in a locked topic, it still works. The lock is a motivational UI element, not a hard gate
 - **Teacher override**: Teachers can unlock all topics for a student or entire class from the dashboard, for cases where they want to jump to a specific topic during a lesson
 
-**Data model:** No new data needed — unlock state is derived from existing completion data in `pythonlab_progress`. Teacher overrides stored as a field on the class/student Firestore document:
+**Data model:** No new data needed — unlock state is derived from existing completion data. The derivation checks `pythonlab_progress` (the primary completion store) and falls back to `pythonlab_game.completedExercises` if a discrepancy is found, treating an exercise as complete if either store records it. This handles edge cases where one store is cleared or corrupted. Teacher overrides stored as a field on the class/student Firestore document:
 ```javascript
 // On class document
 { topicUnlockOverride: "all" }  // or null
@@ -187,6 +192,8 @@ Replaces the current silent streak freeze mechanic (same frequency: once per mon
 - If they don't complete the recovery, the streak resets as normal
 - The recovery offer expires at the end of the day it's shown
 
+**Migration from streak freeze:** The existing `streakFreezes` and `lastFreezeMonth` fields in `pythonlab_game` are replaced by the new recovery fields. On first load after the update, if `streakFreezes > 0` and `lastFreezeMonth` equals the current month, set `streakRecoveryAvailable: false` (freeze already used this month); otherwise set `streakRecoveryAvailable: true`. The `getProfile()` function in `gamification.js` must return the new recovery fields instead of `streakFreezes`. UI references to `streakFreezes` in `index.html` and `profile.html` must be replaced with recovery status display (e.g. "Recovery available" / "Recovery used this month").
+
 **Streak calendar on profile:**
 A 30-day grid on the profile page showing recent activity:
 - Filled dot = active day
@@ -202,7 +209,7 @@ A 30-day grid on the profile page showing recent activity:
   streakRecoveryMonth: "2026-03",
   streakBrokenValue: 5,          // streak value before it broke
   streakRecoveryExpiry: "2026-03-16", // recovery offer expires end of this day
-  activityHistory: ["2026-03-14", "2026-03-15", "2026-03-16"]  // last 30 active days
+  activityHistory: ["2026-03-14", "2026-03-15", "2026-03-16"]  // last 30 active days, trimmed to 30 entries on each update
 }
 ```
 
@@ -272,7 +279,7 @@ A live feed of class achievements visible to students.
 - Milestone events written as entries in a `feed` subcollection on the class Firestore document
 - Each entry: `{ type: "badge"|"level"|"topic", studentNickname: "Alex", detail: "Code Detective", timestamp: <serverTimestamp> }`
 - Feed entries written by the client when milestones occur (during `Gamification.completeExercise`)
-- Old entries (>7 days) can be cleaned up periodically
+- Old entries (>7 days) are cleaned up client-side: when a student loads the feed, the query filters to entries from the last 7 days only (`where("timestamp", ">", sevenDaysAgo)`). Stale entries remain in Firestore but are never displayed. If the collection grows too large over time, a teacher can manually clear old entries from the dashboard, or a Cloud Function can be added later as an optimisation
 
 **Teacher dashboard addition:**
 - "Class Feed" toggle in class settings
@@ -311,7 +318,7 @@ Collective targets that the whole class works toward together.
 }
 ```
 
-- Progress updates as students complete exercises (each completion increments the class counter via Firestore)
+- Progress updates as students complete exercises. For `exercises_completed` and `xp_earned` metrics, use `firebase.firestore.FieldValue.increment(1)` (or the XP amount) to safely handle concurrent updates from multiple students. For `students_at_level` and `topics_completed` metrics, the counter is recalculated by querying student documents in the class (these change infrequently enough that a read-then-write is acceptable)
 
 **Teacher dashboard addition:**
 - "Set Class Goal" form: metric dropdown, target number, optional deadline
@@ -325,7 +332,7 @@ A weekly competitive view for classes where healthy competition works.
 **Behaviour:**
 - Teacher toggles "Show Leaderboard" per class from the dashboard. Off by default
 - When enabled, a "This Week's Top 5" card appears on the student's landing page
-- Shows top 5 students in the class by weekly XP (reuses the existing `weeklyXP` tracking in `gamification.js`)
+- Shows top 5 students in the class by weekly XP (reuses the existing `weeklyXP` tracking in `gamification.js`; `weeklyXP` and `weekStartDate` must be added to the `syncProgress()` Firestore payload in `firebase-sync.js` — they are currently only in localStorage)
 - Resets every Monday — a new week is a fresh start, so no one is permanently behind
 - Students outside the top 5 see their own rank below the list: "You're #8 this week"
 - Ties show the same rank
@@ -382,7 +389,7 @@ After all three phases, the `index.html` landing page has this structure (top to
 - `js/gamification.js` — Daily challenge streak, weekly missions logic, mystery badges, streak recovery, level perks, session tracking
 - `js/progress.js` — Topic unlock state derivation
 - `js/celebrations.js` — Lucky XP animation variant, streak milestone celebration, topic unlock animation, goal completion celebration
-- `js/firebase-sync.js` — Sync new data fields, feed writes, class goal increments, leaderboard reads, Double XP reads
+- `js/firebase-sync.js` — Sync new data fields (including `weeklyXP` and `weekStartDate` which must be added to `syncProgress()` payload), feed writes, class goal increments via `FieldValue.increment()`, leaderboard reads, Double XP reads
 - `data/exercises.js` — No changes to existing exercises
 - `css/platform.css` — Locked topic styles, streak flame variants, level perk CSS classes
 - `css/gamification.css` — Lucky XP animation, streak calendar, weekly mission styles, perk preview styles
