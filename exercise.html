@@ -257,6 +257,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <script src="data/exercises.js"></script>
+    <script src="data/daily-challenges.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/gamification.js"></script>
     <script src="js/celebrations.js"></script>
@@ -307,30 +308,52 @@
         var topicId = params.get("topic");
         var exId    = params.get("ex");
 
-        var yearData = EXERCISES[yearKey];
-        if (!yearData) { window.location.href = "index.html"; return; }
-
-        // Find topic & exercise
         var topic, exercise, exerciseIndex, allExercises = [];
-        var topics = yearData.topics || [];
-        for (var t = 0; t < topics.length; t++) {
-            if (topics[t].id === topicId) {
-                topic = topics[t];
-                allExercises = topic.exercises || [];
-                for (var e = 0; e < allExercises.length; e++) {
-                    if (allExercises[e].id === exId) {
-                        exercise = allExercises[e];
-                        exerciseIndex = e;
-                        break;
-                    }
+        var _isDailyChallenge = false;
+
+        // Daily challenge: load from DAILY_CHALLENGES instead of EXERCISES
+        var dailyId = params.get("daily");
+        if (dailyId && typeof DAILY_CHALLENGES !== "undefined") {
+            for (var d = 0; d < DAILY_CHALLENGES.length; d++) {
+                if (DAILY_CHALLENGES[d].id === dailyId) {
+                    exercise = DAILY_CHALLENGES[d];
+                    break;
                 }
-                break;
+            }
+            if (exercise) {
+                _isDailyChallenge = true;
+                exerciseIndex = 0;
+                allExercises = [exercise];
+                topic = { title: "Daily Challenge", id: "daily" };
+                document.getElementById("back-link").href = "index.html";
             }
         }
-        if (!exercise) { window.location.href = "topics.html?year=" + yearKey; return; }
 
-        // Set back link
-        document.getElementById("back-link").href = "topics.html?year=" + yearKey;
+        if (!_isDailyChallenge) {
+            var yearData = EXERCISES[yearKey];
+            if (!yearData) { window.location.href = "index.html"; return; }
+
+            // Find topic & exercise
+            var topics = yearData.topics || [];
+            for (var t = 0; t < topics.length; t++) {
+                if (topics[t].id === topicId) {
+                    topic = topics[t];
+                    allExercises = topic.exercises || [];
+                    for (var e = 0; e < allExercises.length; e++) {
+                        if (allExercises[e].id === exId) {
+                            exercise = allExercises[e];
+                            exerciseIndex = e;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            if (!exercise) { window.location.href = "topics.html?year=" + yearKey; return; }
+
+            // Set back link
+            document.getElementById("back-link").href = "topics.html?year=" + yearKey;
+        }
 
         /* ── PRIMM badge mapping ── */
         var primmClasses = {
@@ -729,6 +752,11 @@ sys.stderr = io.StringIO()
 
             // Update header XP display
             _updateHeaderXP();
+
+            // Complete daily challenge if applicable
+            if (params.get("daily")) {
+                Gamification.completeDailyChallenge();
+            }
 
             // Sync to Firebase (if configured)
             if (typeof FirebaseSync !== "undefined") {

@@ -322,6 +322,30 @@
                 </p>
             </div>
 
+            <!-- Daily Challenge -->
+            <div id="daily-challenge-section" class="max-w-2xl mx-auto mb-8 hidden">
+              <div id="daily-challenge-card" class="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">🎯</span>
+                    <h2 class="text-lg font-bold text-gray-800">Today's Challenge</h2>
+                  </div>
+                  <div id="daily-challenge-timer" class="text-sm text-gray-500"></div>
+                </div>
+                <p id="daily-challenge-title" class="font-semibold text-gray-700 mb-1"></p>
+                <p id="daily-challenge-type" class="text-sm text-gray-500 mb-3"></p>
+                <div class="flex items-center justify-between">
+                  <a id="daily-challenge-link" href="#" class="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
+                    Start Challenge
+                  </a>
+                  <div id="daily-challenge-streak" class="text-sm text-amber-700 font-medium"></div>
+                </div>
+                <div id="daily-challenge-done" class="hidden text-center py-2">
+                  <span class="text-green-600 font-semibold">✅ Completed! Come back tomorrow for a new one</span>
+                </div>
+              </div>
+            </div>
+
             <!-- Year group cards -->
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <!-- Year 7 -->
@@ -738,6 +762,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <script src="data/exercises.js"></script>
+    <script src="data/daily-challenges.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/gamification.js"></script>
     <script src="js/celebrations.js"></script>
@@ -902,6 +927,36 @@
             if (typeof Progress !== 'undefined') {
                 Progress.renderLandingBars();
             }
+            renderDailyChallenge();
+        }
+
+        function renderDailyChallenge() {
+          var challenge = Gamification.getTodaysChallenge();
+          var section = document.getElementById("daily-challenge-section");
+          if (!challenge || !section) return;
+
+          section.classList.remove("hidden");
+
+          document.getElementById("daily-challenge-title").textContent = challenge.title;
+          document.getElementById("daily-challenge-type").textContent = challenge.type.charAt(0).toUpperCase() + challenge.type.slice(1) + " exercise";
+          document.getElementById("daily-challenge-link").href = "exercise.html?daily=" + challenge.id;
+
+          // Countdown to midnight
+          var now = new Date();
+          var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          var hoursLeft = Math.ceil((midnight - now) / (1000 * 60 * 60));
+          document.getElementById("daily-challenge-timer").textContent = hoursLeft + "h remaining";
+
+          // Challenge streak
+          var profile = Gamification.getProfile();
+          var streakText = profile.dailyChallengeStreak > 0 ? "\uD83D\uDD25 " + profile.dailyChallengeStreak + " day challenge streak" : "";
+          document.getElementById("daily-challenge-streak").textContent = streakText;
+
+          // Show completed state if already done
+          if (Gamification.isDailyChallengeComplete()) {
+            document.getElementById("daily-challenge-link").classList.add("hidden");
+            document.getElementById("daily-challenge-done").classList.remove("hidden");
+          }
         }
 
         /* ── LOGIN view ── */
