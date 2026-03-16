@@ -84,6 +84,7 @@
     <script src="data/exercises.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/gamification.js"></script>
+    <script src="js/firebase-sync.js"></script>
     <script>
     (function () {
         // Get year from query string
@@ -145,56 +146,112 @@
             return;
         }
 
-        for (var t = 0; t < topics.length; t++) {
-            var topic = topics[t];
-            var stats = (typeof Gamification !== "undefined" ? Gamification : Progress).countForTopic(yearKey, topic.id);
-            var pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
-            var iconSvg = icons[topic.icon] || icons.list;
+        function renderTopics() {
+            container.innerHTML = "";
+            for (var t = 0; t < topics.length; t++) {
+                var topic = topics[t];
+                var stats = (typeof Gamification !== "undefined" ? Gamification : Progress).countForTopic(yearKey, topic.id);
+                var pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+                var iconSvg = icons[topic.icon] || icons.list;
 
-            // Build exercise list HTML
-            var exListHtml = "";
-            for (var e = 0; e < topic.exercises.length; e++) {
-                var ex = topic.exercises[e];
-                var done = (typeof Gamification !== "undefined" ? Gamification.isExerciseComplete(ex.id) : Progress.isComplete(ex.id));
-                var doneClass = done ? "exercise-complete" : "";
-                var doneIcon = done
-                    ? '<svg class="h-4 w-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>'
-                    : '<span class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] text-slate-400 flex-shrink-0">' + (e + 1) + '</span>';
+                // Check lock state
+                var isUnlocked = Progress.isTopicUnlocked(yearKey, t);
 
-                exListHtml +=
-                    '<a href="exercise.html?year=' + yearKey + '&topic=' + topic.id + '&ex=' + ex.id + '"' +
-                    '   class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 ' + doneClass + '">' +
-                        doneIcon +
-                        '<span class="flex-1 text-sm text-slate-700">' + ex.title + '</span>' +
-                        '<span class="' + (primmClasses[ex.type] || '') + '">' + (primmLabels[ex.type] || ex.type) + '</span>' +
-                    '</a>';
-            }
+                // Check for teacher override
+                var topicOverride = window._topicUnlockOverride || false;
+                if (topicOverride === "all") isUnlocked = true;
 
-            // Topic card
-            var cardHtml =
-                '<div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-all ' + c.hoverBorder + '">' +
-                    '<div class="p-6 flex items-start gap-4">' +
-                        '<div class="flex h-11 w-11 items-center justify-center rounded-xl ' + c.bg + ' ' + c.text + ' flex-shrink-0">' +
-                            '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">' + iconSvg + '</svg>' +
-                        '</div>' +
-                        '<div class="flex-1 min-w-0">' +
-                            '<h2 class="text-lg font-semibold text-slate-900">' + topic.title + '</h2>' +
-                            '<p class="text-sm text-slate-500 mt-0.5">' + topic.description + '</p>' +
-                            '<div class="flex items-center gap-3 mt-3">' +
-                                '<div class="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">' +
-                                    '<div class="h-full rounded-full ' + c.barBg + ' transition-all" style="width: ' + pct + '%"></div>' +
+                // Build exercise list HTML
+                var exListHtml = "";
+                for (var e = 0; e < topic.exercises.length; e++) {
+                    var ex = topic.exercises[e];
+                    var done = (typeof Gamification !== "undefined" ? Gamification.isExerciseComplete(ex.id) : Progress.isComplete(ex.id));
+                    var doneClass = done ? "exercise-complete" : "";
+                    var doneIcon = done
+                        ? '<svg class="h-4 w-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>'
+                        : '<span class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] text-slate-400 flex-shrink-0">' + (e + 1) + '</span>';
+
+                    exListHtml +=
+                        '<a href="exercise.html?year=' + yearKey + '&topic=' + topic.id + '&ex=' + ex.id + '"' +
+                        '   class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 ' + doneClass + '">' +
+                            doneIcon +
+                            '<span class="flex-1 text-sm text-slate-700">' + ex.title + '</span>' +
+                            '<span class="' + (primmClasses[ex.type] || '') + '">' + (primmLabels[ex.type] || ex.type) + '</span>' +
+                        '</a>';
+                }
+
+                // Locked topic overlay
+                var lockHtml = "";
+                var lockedClass = "";
+                if (!isUnlocked) {
+                    lockedClass = " topic-locked";
+                    exListHtml = ""; // Hide exercises
+                    var prevTopic = EXERCISES[yearKey].topics[t - 1];
+                    var prevStats = (typeof Gamification !== "undefined" ? Gamification : Progress).countForTopic(yearKey, prevTopic.id);
+                    var needed = Math.ceil(prevTopic.exercises.length * 0.5) - prevStats.done;
+                    if (needed < 0) needed = 0;
+                    lockHtml = '<div class="text-sm text-gray-500 mt-2 flex items-center gap-1 px-6 pb-4">' +
+                        '\uD83D\uDD12 Complete ' + needed + ' more in ' + prevTopic.title + ' to unlock' +
+                        '</div>';
+                }
+
+                // Topic card
+                var cardHtml =
+                    '<div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-all ' + c.hoverBorder + lockedClass + '">' +
+                        '<div class="p-6 flex items-start gap-4">' +
+                            '<div class="flex h-11 w-11 items-center justify-center rounded-xl ' + c.bg + ' ' + c.text + ' flex-shrink-0">' +
+                                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">' + iconSvg + '</svg>' +
+                            '</div>' +
+                            '<div class="flex-1 min-w-0">' +
+                                '<h2 class="text-lg font-semibold text-slate-900">' + topic.title + '</h2>' +
+                                '<p class="text-sm text-slate-500 mt-0.5">' + topic.description + '</p>' +
+                                '<div class="flex items-center gap-3 mt-3">' +
+                                    '<div class="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">' +
+                                        '<div class="h-full rounded-full ' + c.barBg + ' transition-all" style="width: ' + pct + '%"></div>' +
+                                    '</div>' +
+                                    '<span class="text-xs font-medium text-slate-400 whitespace-nowrap">' + stats.done + ' / ' + stats.total + '</span>' +
                                 '</div>' +
-                                '<span class="text-xs font-medium text-slate-400 whitespace-nowrap">' + stats.done + ' / ' + stats.total + '</span>' +
                             '</div>' +
                         '</div>' +
-                    '</div>' +
-                    '<div class="border-t border-slate-100 divide-y divide-slate-100 px-3 py-1">' +
-                        exListHtml +
-                    '</div>' +
-                '</div>';
+                        (exListHtml ? '<div class="border-t border-slate-100 divide-y divide-slate-100 px-3 py-1">' + exListHtml + '</div>' : '') +
+                        lockHtml +
+                    '</div>';
 
-            container.insertAdjacentHTML("beforeend", cardHtml);
+                container.insertAdjacentHTML("beforeend", cardHtml);
+            }
         }
+
+        renderTopics();
+
+        // Check for teacher override from Firestore
+        function checkTopicOverride() {
+            if (typeof FirebaseSync === "undefined") return;
+            var student = FirebaseSync.getStudent();
+            if (!student || !student.classCode) return;
+            if (!FirebaseSync.enabled) return;
+
+            var db = FirebaseSync.db;
+            if (!db) return;
+
+            // Check class-level override
+            db.collection("classes").doc(student.classCode).get().then(function(doc) {
+                if (doc.exists && doc.data().topicUnlockOverride === "all") {
+                    window._topicUnlockOverride = "all";
+                    renderTopics();
+                }
+            });
+
+            // Check student-level override
+            if (student.id) {
+                db.collection("students").doc(student.id).get().then(function(doc) {
+                    if (doc.exists && doc.data().topicUnlockOverride === "all") {
+                        window._topicUnlockOverride = "all";
+                        renderTopics();
+                    }
+                });
+            }
+        }
+        checkTopicOverride();
     })();
     </script>
 </body>

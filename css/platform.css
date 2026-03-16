@@ -93,3 +93,30 @@ html { scroll-behavior: smooth; }
 
 .loading-dot:nth-child(2) { animation-delay: 0.2s; }
 .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Locked topic card */
+.topic-locked {
+  opacity: 0.6;
+  filter: grayscale(30%);
+  pointer-events: none;
+  position: relative;
+}
+
+.topic-locked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: inherit;
+}
+
+/* Topic unlock animation */
+.topic-unlocking {
+  animation: topic-unlock 0.6s ease-out forwards;
+}
+
+@keyframes topic-unlock {
+  0% { opacity: 0.6; filter: grayscale(30%); }
+  50% { transform: scale(1.02); }
+  100% { opacity: 1; filter: grayscale(0%); transform: scale(1); }
+}

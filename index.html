@@ -329,6 +329,14 @@
               </div>
             </div>
 
+            <!-- Streak Recovery Banner -->
+            <div id="streak-recovery-banner" class="hidden max-w-2xl mx-auto mb-4">
+              <div class="bg-orange-50 border-2 border-orange-300 rounded-xl p-4">
+                <p id="streak-recovery-message" class="font-semibold text-orange-800"></p>
+                <p class="text-sm text-orange-600 mt-1">Complete 2 exercises today to recover it!</p>
+              </div>
+            </div>
+
             <!-- Daily Challenge -->
             <div id="daily-challenge-section" class="max-w-2xl mx-auto mb-8 hidden">
               <div id="daily-challenge-card" class="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-6 shadow-sm">
@@ -949,10 +957,12 @@
             }
             if (typeof Progress !== 'undefined') {
                 Progress.renderLandingBars();
+                renderUnlockCounts();
             }
             renderDailyChallenge();
             renderWeeklyMissions();
             checkDoubleXP();
+            checkStreakRecovery();
         }
 
         function renderDailyChallenge() {
@@ -998,6 +1008,35 @@
             }
             window._doubleXPActive = active;
           });
+        }
+
+        function renderUnlockCounts() {
+          var years = ["7", "8", "9", "gcse"];
+          for (var u = 0; u < years.length; u++) {
+            var unlockInfo = Progress.getUnlockCount(years[u]);
+            var label = document.querySelector('.progress-bar-label[data-year="' + years[u] + '"]');
+            if (label && !label.nextElementSibling || (label && label.nextElementSibling && !label.nextElementSibling.classList.contains("unlock-count"))) {
+              var unlockLabel = document.createElement("p");
+              unlockLabel.className = "unlock-count text-xs text-gray-500 mt-1";
+              unlockLabel.textContent = unlockInfo.unlocked + "/" + unlockInfo.total + " topics unlocked";
+              var parentDiv = label.closest(".flex.items-center");
+              if (parentDiv && parentDiv.parentNode) {
+                parentDiv.parentNode.insertBefore(unlockLabel, parentDiv.nextSibling);
+              }
+            }
+          }
+        }
+
+        function checkStreakRecovery() {
+          if (typeof Gamification === "undefined" || typeof Gamification.getStreakRecoveryStatus !== "function") return;
+          var recovery = Gamification.getStreakRecoveryStatus();
+          var banner = document.getElementById("streak-recovery-banner");
+          if (!banner) return;
+          if (recovery.recoveryActive) {
+            banner.classList.remove("hidden");
+            document.getElementById("streak-recovery-message").textContent =
+              "Your " + recovery.brokenValue + "-day streak ended yesterday!";
+          }
         }
 
         function renderWeeklyMissions() {
