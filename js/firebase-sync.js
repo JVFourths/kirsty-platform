@@ -364,6 +364,8 @@ var FirebaseSync = (function () {
             totalExercises: profile.totalExercises,
             earnedBadges: Object.keys(profile.earnedBadges),
             completedExerciseIds: Object.keys(profile.completedExercises),
+            weeklyXP: profile.weeklyXP || 0,
+            weekStartDate: profile.weekStartDate || "",
             lastSynced: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: new Date().toISOString()
         };
@@ -574,6 +576,130 @@ var FirebaseSync = (function () {
         return db.collection("students").doc(studentId).update({ topicUnlockOverride: override });
     }
 
+    /* ── Feed ── */
+
+    function writeFeedEntry(classCode, entry) {
+      if (!_enabled || !db) return Promise.resolve();
+      return db.collection("classes").doc(classCode).collection("feed").add({
+        type: entry.type,
+        studentNickname: entry.studentNickname,
+        detail: entry.detail,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    function getFeed(classCode) {
+      if (!_enabled || !db) return Promise.resolve([]);
+      var sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      return db.collection("classes").doc(classCode).collection("feed")
+        .where("timestamp", ">", sevenDaysAgo)
+        .orderBy("timestamp", "desc")
+        .limit(15)
+        .get()
+        .then(function(snapshot) {
+          var entries = [];
+          snapshot.forEach(function(doc) {
+            entries.push(doc.data());
+          });
+          return entries;
+        });
+    }
+
+    /* ── Class Goals ── */
+
+    function setClassGoal(classCode, goal) {
+      if (!_enabled || !db) return Promise.resolve();
+      return db.collection("classes").doc(classCode).update({
+        currentGoal: {
+          metric: goal.metric,
+          target: goal.target,
+          current: 0,
+          deadline: goal.deadline || null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }
+      });
+    }
+
+    function incrementClassGoal(classCode, metric, amount) {
+      if (!_enabled || !db) return Promise.resolve();
+      // Only use increment for exercises_completed and xp_earned
+      if (metric === "exercises_completed" || metric === "xp_earned") {
+        return db.collection("classes").doc(classCode).update({
+          "currentGoal.current": firebase.firestore.FieldValue.increment(amount)
+        });
+      }
+      return Promise.resolve();
+    }
+
+    function getClassGoal(classCode) {
+      if (!_enabled || !db) return Promise.resolve(null);
+      return db.collection("classes").doc(classCode).get().then(function(doc) {
+        if (!doc.exists) return null;
+        return doc.data().currentGoal || null;
+      });
+    }
+
+    function clearClassGoal(classCode) {
+      if (!_enabled || !db) return Promise.resolve();
+      return db.collection("classes").doc(classCode).update({ currentGoal: null });
+    }
+
+    /* ── Leaderboard & Class Settings ── */
+
+    function getClassSettings(classCode) {
+      if (!_enabled || !db) return Promise.resolve({});
+      return db.collection("classes").doc(classCode).get().then(function(doc) {
+        if (!doc.exists) return {};
+        var data = doc.data();
+        return {
+          feedEnabled: data.feedEnabled || false,
+          leaderboardEnabled: data.leaderboardEnabled || false,
+          leaderboardAnonymous: data.leaderboardAnonymous || false,
+          doubleXP: data.doubleXP || false,
+          topicUnlockOverride: data.topicUnlockOverride || null
+        };
+      });
+    }
+
+    function updateClassSettings(classCode, settings) {
+      if (!_enabled || !db) return Promise.resolve();
+      // Use set with merge to handle cases where class doc may not have all fields yet
+      return db.collection("classes").doc(classCode).set(settings, { merge: true });
+    }
+
+    function getLeaderboard(classCode) {
+      if (!_enabled || !db) return Promise.resolve([]);
+
+      // Calculate current week start to filter out stale data
+      var now = new Date();
+      var day = now.getDay();
+      var diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      var monday = new Date(now.getFullYear(), now.getMonth(), diff);
+      var currentWeekStart = monday.toISOString().split("T")[0];
+
+      return db.collection("students")
+        .where("classCode", "==", classCode)
+        .orderBy("weeklyXP", "desc")
+        .limit(10)
+        .get()
+        .then(function(snapshot) {
+          var students = [];
+          snapshot.forEach(function(doc) {
+            var data = doc.data();
+            // Only count XP from the current week; treat stale data as 0
+            var xp = (data.weekStartDate === currentWeekStart) ? (data.weeklyXP || 0) : 0;
+            students.push({
+              id: doc.id,
+              nickname: data.nickname,
+              weeklyXP: xp
+            });
+          });
+          // Re-sort since stale entries may have been zeroed out
+          students.sort(function(a, b) { return b.weeklyXP - a.weeklyXP; });
+          return students;
+        });
+    }
+
     /* ── Export ── */
     return {
         init: init,
@@ -598,6 +724,15 @@ var FirebaseSync = (function () {
         getDoubleXPStatus: getDoubleXPStatus,
         setTopicUnlockOverride: setTopicUnlockOverride,
         setStudentTopicUnlockOverride: setStudentTopicUnlockOverride,
+        writeFeedEntry: writeFeedEntry,
+        getFeed: getFeed,
+        setClassGoal: setClassGoal,
+        incrementClassGoal: incrementClassGoal,
+        getClassGoal: getClassGoal,
+        clearClassGoal: clearClassGoal,
+        getClassSettings: getClassSettings,
+        updateClassSettings: updateClassSettings,
+        getLeaderboard: getLeaderboard,
         get enabled() { return _enabled; },
         get currentUser() { return _currentUser; },
         get db() { return db; }
