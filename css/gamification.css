@@ -318,6 +318,13 @@
     margin-top: 0.125rem;
 }
 
+/* Evolving streak flame */
+.streak-flame-sm { font-size: 1rem; }
+.streak-flame-md { font-size: 1.25rem; }
+.streak-flame-lg { font-size: 1.5rem; filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5)); }
+.streak-flame-blue { font-size: 1.5rem; filter: hue-rotate(200deg) drop-shadow(0 0 6px rgba(59, 130, 246, 0.5)); }
+.streak-flame-purple { font-size: 1.75rem; filter: hue-rotate(260deg) drop-shadow(0 0 8px rgba(139, 92, 246, 0.5)); animation: fire-pulse 1.5s ease-in-out infinite alternate; }
+
 /* Lucky XP bonus animation */
 .lucky-xp {
   color: #f59e0b;

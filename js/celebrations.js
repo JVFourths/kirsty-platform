@@ -168,6 +168,13 @@ var Celebrations = (function () {
             }, 500);
         }
 
+        // Streak milestone celebration
+        if (result.streakMilestone) {
+            var messages = { 3: "On a Roll!", 7: "Week Warrior!", 14: "Unstoppable!", 30: "Monthly Legend!" };
+            var msg = messages[result.streakMilestone] || (result.streakMilestone + " Day Streak!");
+            showStreak(result.streakMilestone);
+        }
+
         // Confetti for first-try or special moments
         if (result.xpGained >= 20) {
             setTimeout(confetti, 300);

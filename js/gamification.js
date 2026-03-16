@@ -144,6 +144,23 @@ var Gamification = (function () {
             for (var key in defaults) {
                 if (!(key in data)) data[key] = defaults[key];
             }
+            // Migration: streak freeze -> streak recovery
+            if (data.streakFreezes !== undefined && data.streakRecoveryAvailable === undefined) {
+                var currentMonth = _thisMonth();
+                if (data.streakFreezes > 0 && data.lastFreezeMonth === currentMonth) {
+                    data.streakRecoveryAvailable = false;
+                } else {
+                    data.streakRecoveryAvailable = true;
+                }
+                data.streakRecoveryMonth = currentMonth;
+                data.streakBrokenValue = 0;
+                data.streakRecoveryExpiry = "";
+                data.activityHistory = [];
+                // Clean up old fields
+                delete data.streakFreezes;
+                delete data.lastFreezeMonth;
+                _save(data);
+            }
             return data;
         } catch (e) {
             return _defaultData();
@@ -191,53 +208,63 @@ var Gamification = (function () {
         var today = _today();
         var yesterday = _yesterday();
 
-        if (data.lastActivityDate === today) {
-            // Already logged in today, no change
-            return data;
-        }
-
-        if (data.lastActivityDate === yesterday) {
-            // Consecutive day — extend streak
-            data.currentStreak += 1;
-        } else if (data.lastActivityDate && data.lastActivityDate !== today) {
-            // Missed a day — check for streak freeze
-            var daysMissed = Math.floor(
-                (new Date(today) - new Date(data.lastActivityDate)) / (1000 * 60 * 60 * 24)
-            );
-
-            if (daysMissed === 2 && data.streakFreezes > 0) {
-                // Missed exactly 1 day, use a freeze
-                data.streakFreezes -= 1;
-                data.currentStreak += 1; // Keep the streak going
-            } else {
-                // Streak broken
-                data.currentStreak = 1;
-            }
-        } else {
-            // First ever visit
-            data.currentStreak = 1;
-        }
-
-        // Update longest streak
-        if (data.currentStreak > data.longestStreak) {
-            data.longestStreak = data.currentStreak;
-        }
-
-        data.lastActivityDate = today;
-
-        // Reset streak freeze monthly
-        if (data.lastFreezeMonth !== _thisMonth()) {
-            data.streakFreezes = 1;
-            data.lastFreezeMonth = _thisMonth();
-        }
-
-        // Weekly XP reset
+        // IMPORTANT: Preserve the existing weekly XP reset logic
         var weekStart = _weekStart();
         if (data.weekStartDate !== weekStart) {
             data.weeklyXP = 0;
             data.weekStartDate = weekStart;
         }
 
+        // Track activity history (trimmed to 30 entries)
+        if (!data.activityHistory) data.activityHistory = [];
+        if (data.activityHistory.indexOf(today) === -1) {
+            data.activityHistory.push(today);
+            if (data.activityHistory.length > 30) {
+                data.activityHistory = data.activityHistory.slice(data.activityHistory.length - 30);
+            }
+        }
+
+        // Reset recovery availability monthly
+        var currentMonth = _thisMonth();
+        if (data.streakRecoveryMonth !== currentMonth) {
+            data.streakRecoveryAvailable = true;
+            data.streakRecoveryMonth = currentMonth;
+        }
+
+        if (data.lastActivityDate === today) {
+            return data; // Already recorded today
+        }
+
+        if (data.lastActivityDate === yesterday) {
+            // Consecutive day — increment streak
+            data.currentStreak = data.currentStreak + 1;
+            data.streakBrokenValue = 0;
+            data.streakRecoveryExpiry = "";
+        } else if (data.lastActivityDate !== "" && data.lastActivityDate !== null) {
+            // Missed a day
+            if (data.streakRecoveryExpiry === today && data.streakBrokenValue > 0) {
+                // Recovery is active — will be resolved when they complete 2 exercises
+                // Don't reset streak yet
+            } else if (data.currentStreak > 0 && data.streakRecoveryAvailable) {
+                // Offer recovery
+                data.streakBrokenValue = data.currentStreak;
+                data.streakRecoveryExpiry = today;
+                data.currentStreak = 0;
+            } else {
+                // No recovery available — full reset
+                data.currentStreak = 1;
+                data.streakBrokenValue = 0;
+                data.streakRecoveryExpiry = "";
+            }
+        } else {
+            data.currentStreak = 1;
+        }
+
+        if (data.currentStreak > data.longestStreak) {
+            data.longestStreak = data.currentStreak;
+        }
+
+        data.lastActivityDate = today;
         return data;
     }
 
@@ -500,6 +527,9 @@ var Gamification = (function () {
             dailyChallengeStreak: data.dailyChallengeStreak,
             longestChallengeStreak: data.longestChallengeStreak,
             dailyChallengesCompleted: data.dailyChallengesCompleted,
+            streakRecoveryAvailable: data.streakRecoveryAvailable,
+            activityHistory: data.activityHistory || [],
+            weekStartDate: data.weekStartDate || "",
             earnedBadges: data.earnedBadges,
             completedExercises: data.completedExercises,
             allBadges: (function() {
@@ -883,6 +913,57 @@ var Gamification = (function () {
     }
 
     /* ═══════════════════════════════════════════
+       STREAK RECOVERY
+       ═══════════════════════════════════════════ */
+
+    function getStreakRecoveryStatus() {
+        var data = _load();
+        return {
+            recoveryAvailable: data.streakRecoveryAvailable,
+            brokenValue: data.streakBrokenValue,
+            recoveryExpiry: data.streakRecoveryExpiry,
+            recoveryActive: data.streakRecoveryExpiry === _today() && data.streakBrokenValue > 0
+        };
+    }
+
+    function completeStreakRecovery() {
+        var data = _load();
+        if (data.streakRecoveryExpiry !== _today() || data.streakBrokenValue === 0) {
+            return false;
+        }
+        // Check if 2 exercises completed today
+        var todayExercises = 0;
+        for (var id in data.completedExercises) {
+            var ex = data.completedExercises[id];
+            if (ex.timestamp) {
+                var exDate = new Date(ex.timestamp).toISOString().split("T")[0];
+                if (exDate === _today()) todayExercises++;
+            }
+        }
+        if (todayExercises >= 2) {
+            data.currentStreak = data.streakBrokenValue;
+            data.streakBrokenValue = 0;
+            data.streakRecoveryExpiry = "";
+            data.streakRecoveryAvailable = false;
+            _save(data);
+            return true;
+        }
+        return false;
+    }
+
+    /* ═══════════════════════════════════════════
+       FLAME CLASS
+       ═══════════════════════════════════════════ */
+
+    function getFlameClass(streakCount) {
+        if (streakCount >= 30) return "streak-flame-purple";
+        if (streakCount >= 14) return "streak-flame-blue";
+        if (streakCount >= 7) return "streak-flame-lg";
+        if (streakCount >= 3) return "streak-flame-md";
+        return "streak-flame-sm";
+    }
+
+    /* ═══════════════════════════════════════════
        EXPORT
        ═══════════════════════════════════════════ */
 
@@ -902,6 +983,9 @@ var Gamification = (function () {
         isDailyChallengeComplete: isDailyChallengeComplete,
         completeDailyChallenge: completeDailyChallenge,
         getWeeklyMissions: getWeeklyMissions,
+        getStreakRecoveryStatus: getStreakRecoveryStatus,
+        completeStreakRecovery: completeStreakRecovery,
+        getFlameClass: getFlameClass,
         BADGES: BADGES,
         LEVELS: LEVELS,
         XP_REWARDS: XP_REWARDS

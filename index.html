@@ -111,7 +111,7 @@
                     </button>
                     <!-- Streak -->
                     <div id="header-streak" class="flex items-center gap-1 text-sm">
-                        <span>🔥</span>
+                        <span id="header-streak-icon">🔥</span>
                         <span id="header-streak-count" class="font-bold text-amber-600">0</span>
                     </div>
                     <!-- Profile link -->
@@ -929,6 +929,10 @@
             document.getElementById('header-level-icon').textContent = profile.level.icon;
             document.getElementById('header-xp-text').textContent = profile.totalXP + ' XP';
             document.getElementById('header-streak-count').textContent = profile.currentStreak;
+            var streakIcon = document.getElementById("header-streak-icon");
+            if (streakIcon) {
+                streakIcon.className = Gamification.getFlameClass(profile.currentStreak);
+            }
         }
 
         /* ── HOME view ── */
