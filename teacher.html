@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en-GB" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard — Python Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe',
+                            300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1',
+                            600: '#4f46e5', 700: '#4338ca', 800: '#3730a3',
+                            900: '#312e81', 950: '#1e1b4b',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/platform.css">
+    <link rel="stylesheet" href="css/gamification.css">
+    <style>
+        /* Sortable column headers */
+        .sortable { cursor: pointer; user-select: none; }
+        .sortable:hover { color: #4f46e5; }
+        .sort-asc::after { content: ' \25B2'; font-size: 0.6em; }
+        .sort-desc::after { content: ' \25BC'; font-size: 0.6em; }
+
+        /* Expanded row detail */
+        .detail-row td { padding: 0 !important; }
+        .detail-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .detail-row.open .detail-content { max-height: 600px; }
+
+        /* Struggling student highlight */
+        .row-struggling { background: #fef2f2 !important; }
+        .row-struggling:hover { background: #fee2e2 !important; }
+
+        /* Weekly chart bars */
+        .chart-bar {
+            transition: height 0.5s ease, background 0.2s ease;
+            border-radius: 4px 4px 0 0;
+            min-height: 2px;
+        }
+        .chart-bar:hover { filter: brightness(1.1); }
+
+        /* Tab active state */
+        .tab-btn { border-bottom: 2px solid transparent; }
+        .tab-btn.active { border-color: #6366f1; color: #4f46e5; font-weight: 600; }
+
+        /* Print styles */
+        @media print {
+            header, .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; }
+            .stat-card { border: 1px solid #ccc !important; break-inside: avoid; }
+            table { font-size: 11px !important; }
+            .detail-row { display: none !important; }
+            main { padding: 0 !important; max-width: 100% !important; }
+            .rounded-2xl { border-radius: 0 !important; }
+            @page { margin: 1.5cm; }
+        }
+
+        /* Live indicator */
+        .live-dot {
+            width: 8px; height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            animation: live-pulse 2s ease infinite;
+        }
+        @keyframes live-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased">
+
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50 no-print">
+        <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-14 items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-mono font-bold text-sm shadow-sm">
+                        Py
+                    </div>
+                    <span class="text-lg font-semibold tracking-tight">Python Lab</span>
+                    <span class="rounded-full bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5">Teacher</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="live-indicator" class="hidden items-center gap-1.5 text-xs text-slate-500">
+                        <span class="live-dot"></span> Live
+                    </span>
+                    <button onclick="window.print()" title="Print report"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all no-print">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" /></svg>
+                        Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Print header (hidden on screen) -->
+    <div class="print-only hidden px-4 py-4 border-b">
+        <h1 class="text-xl font-bold">Python Lab — Student Progress Report</h1>
+        <p class="text-sm text-slate-500" id="print-meta"></p>
+    </div>
+
+    <main class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
+
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 mb-2">Student Progress Dashboard</h1>
+        <p class="text-sm text-slate-500 mb-6">View your students' XP, levels, streaks, and completed exercises across all classes.</p>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 border-b border-slate-200 mb-6 no-print">
+            <button class="tab-btn active px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="progress">Progress</button>
+            <button class="tab-btn px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="assignments">Assignments</button>
+            <button class="tab-btn px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="classes">Manage Classes</button>
+        </div>
+
+        <!-- ============================================================
+             TAB 1: PROGRESS
+             ============================================================ -->
+        <div id="tab-progress">
+
+            <!-- Class code selector -->
+            <div class="flex flex-col sm:flex-row gap-3 mb-6 no-print">
+                <div class="flex-1">
+                    <label for="class-select" class="block text-sm font-medium text-slate-700 mb-1">Select a class</label>
+                    <select id="class-select"
+                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none transition-all">
+                        <option value="">Loading classes...</option>
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button id="export-csv-btn" disabled
+                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        Export CSV
+                    </button>
+                    <button id="refresh-btn"
+                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all active:scale-[0.98]">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Struggling students alert -->
+            <div id="struggling-alert" class="hidden mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <div class="flex items-center gap-2 text-sm font-semibold text-red-700 mb-1">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                    Students needing attention
+                </div>
+                <p id="struggling-text" class="text-xs text-red-600"></p>
+            </div>
+
+            <!-- Summary stats -->
+            <div id="summary-stats" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                <div class="stat-card">
+                    <div id="sum-students" class="stat-value">0</div>
+                    <div class="stat-label">Students</div>
+                </div>
+                <div class="stat-card">
+                    <div id="sum-avg-xp" class="stat-value">0</div>
+                    <div class="stat-label">Avg XP</div>
+                </div>
+                <div class="stat-card">
+                    <div id="sum-avg-exercises" class="stat-value">0</div>
+                    <div class="stat-label">Avg Exercises</div>
+                </div>
+                <div class="stat-card">
+                    <div id="sum-active-streaks" class="stat-value">0</div>
+                    <div class="stat-label">Active Streaks</div>
+                </div>
+            </div>
+
+            <!-- Weekly activity chart -->
+            <div id="weekly-chart-wrap" class="hidden rounded-2xl border border-slate-200 bg-white shadow-sm p-5 mb-6">
+                <h3 class="text-sm font-semibold text-slate-700 mb-3">Weekly Activity (exercises completed)</h3>
+                <div class="flex items-end gap-1 h-32" id="weekly-chart"></div>
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1 px-0.5" id="weekly-labels"></div>
+            </div>
+
+            <!-- Student table -->
+            <div id="student-table-wrap" class="hidden rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm" id="student-table">
+                        <thead>
+                            <tr class="border-b border-slate-100 bg-slate-50/50">
+                                <th class="text-left px-4 py-3 font-semibold text-slate-600 sortable" data-sort="rank">#</th>
+                                <th class="text-left px-4 py-3 font-semibold text-slate-600 sortable" data-sort="nickname">Student</th>
+                                <th class="text-left px-4 py-3 font-semibold text-slate-600 sortable" data-sort="level">Level</th>
+                                <th class="text-right px-4 py-3 font-semibold text-slate-600 sortable sort-desc" data-sort="totalXP">XP</th>
+                                <th class="text-right px-4 py-3 font-semibold text-slate-600 sortable" data-sort="totalExercises">Exercises</th>
+                                <th class="text-center px-4 py-3 font-semibold text-slate-600 sortable" data-sort="currentStreak">Streak</th>
+                                <th class="text-right px-4 py-3 font-semibold text-slate-600 sortable" data-sort="badges">Badges</th>
+                                <th class="text-right px-4 py-3 font-semibold text-slate-600 sortable" data-sort="updatedAt">Last Active</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Empty / loading states -->
+            <div id="loading-state" class="text-center py-16">
+                <div class="flex justify-center gap-1 mb-4">
+                    <span class="loading-dot"></span>
+                    <span class="loading-dot"></span>
+                    <span class="loading-dot"></span>
+                </div>
+                <p class="text-sm text-slate-500">Connecting to Firebase...</p>
+            </div>
+
+            <div id="empty-state" class="hidden text-center py-16">
+                <p class="text-slate-400 text-sm">No students found for this class.</p>
+                <p class="text-slate-400 text-xs mt-2">Students join by entering the class code on the login page.</p>
+            </div>
+
+            <div id="not-configured" class="hidden text-center py-16">
+                <p class="text-slate-500 text-sm font-medium">Firebase not configured yet</p>
+                <p class="text-slate-400 text-xs mt-2 max-w-md mx-auto">
+                    To use the teacher dashboard, you need to set up Firebase.
+                    Open <code class="bg-slate-100 rounded px-1">js/firebase-sync.js</code> and replace the placeholder config with your Firebase project details.
+                </p>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             TAB 2: ASSIGNMENTS
+             ============================================================ -->
+        <div id="tab-assignments" class="hidden">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
+                <h3 class="text-base font-bold text-slate-900 mb-4">Create Assignment</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Class</label>
+                        <select id="assign-class" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white outline-none">
+                            <option value="">Select class...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Due date</label>
+                        <input id="assign-due" type="date" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white outline-none">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Goal description</label>
+                    <input id="assign-desc" type="text" placeholder="e.g. Complete Year 7 Variables topic" maxlength="100"
+                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Target exercises (comma-separated IDs, or topic ID)</label>
+                    <input id="assign-target" type="text" placeholder="e.g. y7-variables or y7-var-1,y7-var-2" maxlength="200"
+                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-mono outline-none">
+                </div>
+                <button id="assign-save-btn"
+                    class="rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-brand-700 hover:to-brand-800 active:scale-[0.98]">
+                    Save Assignment
+                </button>
+            </div>
+
+            <!-- Active assignments list -->
+            <div id="assignments-list" class="space-y-3"></div>
+            <div id="no-assignments" class="hidden text-center py-12">
+                <p class="text-slate-400 text-sm">No assignments yet. Create one above.</p>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             TAB 3: MANAGE CLASSES
+             ============================================================ -->
+        <div id="tab-classes" class="hidden">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
+                <h3 class="text-base font-bold text-slate-900 mb-4">Create Class Code</h3>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Class code</label>
+                        <input id="new-class-code" type="text" maxlength="10" placeholder="e.g. 7A-CS" autocomplete="off"
+                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-mono uppercase outline-none">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Label (optional)</label>
+                        <input id="new-class-label" type="text" maxlength="40" placeholder="e.g. Year 7 Set A" autocomplete="off"
+                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none">
+                    </div>
+                    <div class="flex items-end">
+                        <button id="create-class-btn"
+                            class="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-emerald-600 hover:to-teal-700 active:scale-[0.98]">
+                            Create
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class list -->
+            <div id="class-list" class="space-y-3"></div>
+            <div id="no-classes" class="hidden text-center py-12">
+                <p class="text-slate-400 text-sm">No managed classes yet.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script src="data/exercises.js"></script>
+    <script src="js/firebase-sync.js"></script>
+
+    <script>
+    (function () {
+        /* ═══════════════════════════════════════════
+           STATE
+           ═══════════════════════════════════════════ */
+        var currentStudents = [];
+        var currentClassCode = "";
+        var sortField = "totalXP";
+        var sortDir = "desc";
+        var unsubscribe = null; // real-time listener
+
+        var classSelect = document.getElementById("class-select");
+        var tbody = document.getElementById("student-tbody");
+
+        /* ═══════════════════════════════════════════
+           BUILD EXERCISE LOOKUP
+           ═══════════════════════════════════════════ */
+        var exerciseLookup = {};  // id → { title, type, topic, year }
+        var topicLookup = {};     // topicId → { title, exerciseIds }
+        var allExerciseIds = [];
+
+        (function buildLookup() {
+            var years = Object.keys(EXERCISES);
+            for (var y = 0; y < years.length; y++) {
+                var yearKey = years[y];
+                var yearData = EXERCISES[yearKey];
+                var topics = yearData.topics || [];
+                for (var t = 0; t < topics.length; t++) {
+                    var topic = topics[t];
+                    var tIds = [];
+                    var exs = topic.exercises || [];
+                    for (var e = 0; e < exs.length; e++) {
+                        exerciseLookup[exs[e].id] = {
+                            title: exs[e].title,
+                            type: exs[e].type,
+                            topic: topic.title,
+                            topicId: topic.id,
+                            year: yearData.label
+                        };
+                        tIds.push(exs[e].id);
+                        allExerciseIds.push(exs[e].id);
+                    }
+                    topicLookup[topic.id] = { title: topic.title, year: yearData.label, exerciseIds: tIds };
+                }
+            }
+        })();
+
+        /* ═══════════════════════════════════════════
+           TABS
+           ═══════════════════════════════════════════ */
+        var tabBtns = document.querySelectorAll(".tab-btn");
+        for (var i = 0; i < tabBtns.length; i++) {
+            tabBtns[i].addEventListener("click", function () {
+                for (var j = 0; j < tabBtns.length; j++) tabBtns[j].classList.remove("active");
+                this.classList.add("active");
+                document.getElementById("tab-progress").classList.toggle("hidden", this.dataset.tab !== "progress");
+                document.getElementById("tab-assignments").classList.toggle("hidden", this.dataset.tab !== "assignments");
+                document.getElementById("tab-classes").classList.toggle("hidden", this.dataset.tab !== "classes");
+                if (this.dataset.tab === "assignments") loadAssignments();
+                if (this.dataset.tab === "classes") loadManagedClasses();
+            });
+        }
+
+        /* ═══════════════════════════════════════════
+           INIT
+           ═══════════════════════════════════════════ */
+
+        // Check if Firebase is configured
+        if (!FirebaseSync.enabled) {
+            document.getElementById("loading-state").classList.add("hidden");
+            document.getElementById("not-configured").classList.remove("hidden");
+            return;
+        }
+
+        // Load classes
+        FirebaseSync.getAllClasses().then(function (classes) {
+            document.getElementById("loading-state").classList.add("hidden");
+
+            if (classes.length === 0) {
+                document.getElementById("empty-state").classList.remove("hidden");
+                classSelect.innerHTML = '<option value="">No classes found</option>';
+                return;
+            }
+
+            classSelect.innerHTML = '<option value="">Choose a class...</option>';
+            var assignSelect = document.getElementById("assign-class");
+            assignSelect.innerHTML = '<option value="">Select class...</option>';
+
+            for (var i = 0; i < classes.length; i++) {
+                var opt = document.createElement("option");
+                opt.value = classes[i].code;
+                opt.textContent = classes[i].code + " (" + classes[i].count + " students)";
+                classSelect.appendChild(opt);
+
+                var opt2 = opt.cloneNode(true);
+                assignSelect.appendChild(opt2);
+            }
+
+            // Auto-select first class
+            if (classes.length === 1) {
+                classSelect.value = classes[0].code;
+                loadClass(classes[0].code);
+            }
+        });
+
+        classSelect.addEventListener("change", function () {
+            if (classSelect.value) loadClass(classSelect.value);
+        });
+
+        document.getElementById("refresh-btn").addEventListener("click", function () {
+            if (classSelect.value) loadClass(classSelect.value);
+        });
+
+        /* ═══════════════════════════════════════════
+           LOAD CLASS (with real-time listener)
+           ═══════════════════════════════════════════ */
+        function loadClass(code) {
+            currentClassCode = code;
+
+            // Tear down previous listener
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400 text-sm">Loading...</td></tr>';
+            document.getElementById("student-table-wrap").classList.remove("hidden");
+            document.getElementById("empty-state").classList.add("hidden");
+
+            // Set up real-time listener
+            unsubscribe = FirebaseSync.onClassStudents(code, function (students) {
+                currentStudents = students;
+                document.getElementById("live-indicator").classList.remove("hidden");
+                document.getElementById("live-indicator").classList.add("inline-flex");
+                document.getElementById("export-csv-btn").disabled = students.length === 0;
+                renderStudents();
+            });
+
+            // Update print meta
+            document.getElementById("print-meta").textContent = "Class: " + code + " — Printed: " + new Date().toLocaleDateString("en-GB");
+        }
+
+        /* ═══════════════════════════════════════════
+           RENDER STUDENTS (sorted)
+           ═══════════════════════════════════════════ */
+        function renderStudents() {
+            var students = currentStudents.slice();
+
+            if (students.length === 0) {
+                document.getElementById("student-table-wrap").classList.add("hidden");
+                document.getElementById("empty-state").classList.remove("hidden");
+                document.getElementById("summary-stats").classList.add("hidden");
+                document.getElementById("weekly-chart-wrap").classList.add("hidden");
+                document.getElementById("struggling-alert").classList.add("hidden");
+                return;
+            }
+
+            // Sort
+            students.sort(function (a, b) {
+                var aVal, bVal;
+                if (sortField === "nickname") {
+                    aVal = (a.nickname || "").toLowerCase();
+                    bVal = (b.nickname || "").toLowerCase();
+                    return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                }
+                if (sortField === "badges") {
+                    aVal = (a.earnedBadges || []).length;
+                    bVal = (b.earnedBadges || []).length;
+                } else if (sortField === "updatedAt") {
+                    aVal = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                    bVal = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                } else if (sortField === "rank") {
+                    // rank is just index, sort by original XP order
+                    aVal = a.totalXP || 0; bVal = b.totalXP || 0;
+                } else {
+                    aVal = a[sortField] || 0;
+                    bVal = b[sortField] || 0;
+                }
+                return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+            });
+
+            // Summary stats
+            var totalXP = 0, totalExercises = 0, activeStreaks = 0;
+            for (var s = 0; s < students.length; s++) {
+                totalXP += students[s].totalXP || 0;
+                totalExercises += students[s].totalExercises || 0;
+                if ((students[s].currentStreak || 0) > 0) activeStreaks++;
+            }
+
+            document.getElementById("summary-stats").classList.remove("hidden");
+            document.getElementById("sum-students").textContent = students.length;
+            document.getElementById("sum-avg-xp").textContent = Math.round(totalXP / students.length);
+            document.getElementById("sum-avg-exercises").textContent = Math.round(totalExercises / students.length);
+            document.getElementById("sum-active-streaks").textContent = activeStreaks;
+
+            // Struggling students check (inactive > 7 days or 0 exercises)
+            var now = Date.now();
+            var sevenDays = 7 * 24 * 60 * 60 * 1000;
+            var struggling = [];
+            for (var s = 0; s < students.length; s++) {
+                var st = students[s];
+                var lastTime = st.updatedAt ? new Date(st.updatedAt).getTime() : 0;
+                var inactive = (now - lastTime) > sevenDays;
+                var lowProgress = (st.totalExercises || 0) === 0;
+                st._struggling = inactive || lowProgress;
+                if (st._struggling) {
+                    var reason = lowProgress ? "no exercises completed" : "inactive for 7+ days";
+                    struggling.push((st.nickname || "Unknown") + " (" + reason + ")");
+                }
+            }
+
+            if (struggling.length > 0) {
+                document.getElementById("struggling-alert").classList.remove("hidden");
+                document.getElementById("struggling-text").textContent = struggling.join(", ");
+            } else {
+                document.getElementById("struggling-alert").classList.add("hidden");
+            }
+
+            // Render table rows
+            tbody.innerHTML = "";
+            for (var i = 0; i < students.length; i++) {
+                var st = students[i];
+                var lastActive = st.updatedAt
+                    ? new Date(st.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+                    : "\u2014";
+
+                // Main row
+                var row = document.createElement("tr");
+                row.className = "border-b border-slate-50 hover:bg-slate-50/50 transition-colors cursor-pointer" + (st._struggling ? " row-struggling" : "");
+                row.dataset.index = i;
+                row.innerHTML =
+                    '<td class="px-4 py-3 font-bold text-slate-400">' + (i + 1) + '</td>' +
+                    '<td class="px-4 py-3 font-semibold text-slate-900">' + escHtml(st.nickname || "Unknown") + '</td>' +
+                    '<td class="px-4 py-3 text-slate-600">Lv ' + (st.level || 1) + ' <span class="text-slate-400 text-xs">' + escHtml(st.levelTitle || "") + '</span></td>' +
+                    '<td class="px-4 py-3 text-right font-bold text-brand-600">' + (st.totalXP || 0) + '</td>' +
+                    '<td class="px-4 py-3 text-right">' + (st.totalExercises || 0) + '</td>' +
+                    '<td class="px-4 py-3 text-center">' +
+                        ((st.currentStreak || 0) > 0
+                            ? '<span class="inline-flex items-center gap-0.5">\uD83D\uDD25 ' + st.currentStreak + '</span>'
+                            : '<span class="text-slate-300">\u2014</span>') +
+                    '</td>' +
+                    '<td class="px-4 py-3 text-right">' + ((st.earnedBadges || []).length) + '</td>' +
+                    '<td class="px-4 py-3 text-right text-slate-400 text-xs">' + lastActive + '</td>';
+                row.addEventListener("click", toggleDetail);
+                tbody.appendChild(row);
+
+                // Detail row (hidden by default)
+                var detailRow = document.createElement("tr");
+                detailRow.className = "detail-row";
+                detailRow.id = "detail-" + i;
+                detailRow.innerHTML = '<td colspan="8" class="px-0"><div class="detail-content"></div></td>';
+                tbody.appendChild(detailRow);
+            }
+
+            // Weekly chart
+            renderWeeklyChart(students);
+        }
+
+        /* ═══════════════════════════════════════════
+           STUDENT DETAIL EXPAND (topic breakdown)
+           ═══════════════════════════════════════════ */
+        function toggleDetail(e) {
+            var row = e.currentTarget;
+            var idx = row.dataset.index;
+            var detailRow = document.getElementById("detail-" + idx);
+            var isOpen = detailRow.classList.contains("open");
+
+            // Close all other detail rows
+            var allDetails = document.querySelectorAll(".detail-row.open");
+            for (var d = 0; d < allDetails.length; d++) {
+                allDetails[d].classList.remove("open");
+            }
+
+            if (isOpen) return;
+
+            // Build detail content
+            var st = currentStudents[idx];
+            var completed = st.completedExerciseIds || [];
+            var completedSet = {};
+            for (var c = 0; c < completed.length; c++) completedSet[completed[c]] = true;
+
+            var html = '<div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100">';
+            html += '<h4 class="text-sm font-bold text-slate-700 mb-3">Topic Breakdown for ' + escHtml(st.nickname || "Unknown") + '</h4>';
+            html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';
+
+            var topicIds = Object.keys(topicLookup);
+            for (var t = 0; t < topicIds.length; t++) {
+                var topic = topicLookup[topicIds[t]];
+                var done = 0;
+                for (var e = 0; e < topic.exerciseIds.length; e++) {
+                    if (completedSet[topic.exerciseIds[e]]) done++;
+                }
+                var total = topic.exerciseIds.length;
+                var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                var barColor = pct === 100 ? "bg-emerald-500" : pct > 0 ? "bg-brand-500" : "bg-slate-200";
+
+                html += '<div class="bg-white rounded-lg border border-slate-200 p-3">';
+                html += '<div class="flex justify-between items-center mb-1">';
+                html += '<span class="text-xs font-semibold text-slate-700">' + escHtml(topic.title) + '</span>';
+                html += '<span class="text-[10px] text-slate-400">' + escHtml(topic.year) + '</span>';
+                html += '</div>';
+                html += '<div class="flex items-center gap-2">';
+                html += '<div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full ' + barColor + '" style="width:' + pct + '%"></div></div>';
+                html += '<span class="text-[11px] font-semibold ' + (pct === 100 ? 'text-emerald-600' : 'text-slate-500') + '">' + done + '/' + total + '</span>';
+                html += '</div>';
+
+                // Show individual exercises
+                html += '<div class="mt-2 flex flex-wrap gap-1">';
+                for (var e = 0; e < topic.exerciseIds.length; e++) {
+                    var exId = topic.exerciseIds[e];
+                    var ex = exerciseLookup[exId];
+                    var isDone = completedSet[exId];
+                    html += '<span class="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded ' +
+                        (isDone ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400') + '" title="' + escHtml(ex.title) + '">';
+                    html += (isDone ? '\u2713 ' : '') + escHtml(ex.type.charAt(0).toUpperCase() + ex.type.slice(1));
+                    html += '</span>';
+                }
+                html += '</div>';
+
+                html += '</div>';
+            }
+
+            html += '</div></div>';
+
+            detailRow.querySelector(".detail-content").innerHTML = html;
+            detailRow.classList.add("open");
+        }
+
+        /* ═══════════════════════════════════════════
+           SORTABLE COLUMNS
+           ═══════════════════════════════════════════ */
+        var headers = document.querySelectorAll(".sortable");
+        for (var h = 0; h < headers.length; h++) {
+            headers[h].addEventListener("click", function (e) {
+                e.stopPropagation();
+                var field = this.dataset.sort;
+
+                // Remove sort classes from all
+                for (var hh = 0; hh < headers.length; hh++) {
+                    headers[hh].classList.remove("sort-asc", "sort-desc");
+                }
+
+                if (sortField === field) {
+                    sortDir = sortDir === "asc" ? "desc" : "asc";
+                } else {
+                    sortField = field;
+                    sortDir = (field === "nickname") ? "asc" : "desc";
+                }
+
+                this.classList.add(sortDir === "asc" ? "sort-asc" : "sort-desc");
+                renderStudents();
+            });
+        }
+
+        /* ═══════════════════════════════════════════
+           WEEKLY ACTIVITY CHART
+           ═══════════════════════════════════════════ */
+        function renderWeeklyChart(students) {
+            // Aggregate activity by day for last 7 days
+            var days = [];
+            var dayLabels = [];
+            var now = new Date();
+            for (var d = 6; d >= 0; d--) {
+                var date = new Date(now);
+                date.setDate(date.getDate() - d);
+                var key = date.toISOString().split("T")[0];
+                days.push({ key: key, count: 0 });
+                dayLabels.push(date.toLocaleDateString("en-GB", { weekday: "short" }));
+            }
+
+            // Count exercises completed per day
+            // We approximate by counting total exercises per student vs updatedAt
+            // For a more accurate chart we'd need per-exercise timestamps
+            // For now, show activity based on updatedAt (how many students were active each day)
+            for (var s = 0; s < students.length; s++) {
+                var st = students[s];
+                if (st.updatedAt) {
+                    var dateKey = st.updatedAt.split("T")[0];
+                    for (var d = 0; d < days.length; d++) {
+                        if (days[d].key === dateKey) {
+                            days[d].count += (st.totalExercises || 1);
+                        }
+                    }
+                }
+            }
+
+            var maxCount = 1;
+            for (var d = 0; d < days.length; d++) {
+                if (days[d].count > maxCount) maxCount = days[d].count;
+            }
+
+            var chartEl = document.getElementById("weekly-chart");
+            var labelsEl = document.getElementById("weekly-labels");
+            chartEl.innerHTML = "";
+            labelsEl.innerHTML = "";
+
+            for (var d = 0; d < days.length; d++) {
+                var pct = Math.round((days[d].count / maxCount) * 100);
+                var bar = document.createElement("div");
+                bar.className = "chart-bar flex-1";
+                bar.style.height = pct + "%";
+                bar.style.background = days[d].count > 0
+                    ? "linear-gradient(180deg, #6366f1, #818cf8)"
+                    : "#e2e8f0";
+                bar.title = days[d].key + ": " + days[d].count + " exercises";
+                chartEl.appendChild(bar);
+
+                var label = document.createElement("span");
+                label.className = "flex-1 text-center";
+                label.textContent = dayLabels[d];
+                labelsEl.appendChild(label);
+            }
+
+            document.getElementById("weekly-chart-wrap").classList.remove("hidden");
+        }
+
+        /* ═══════════════════════════════════════════
+           EXPORT CSV
+           ═══════════════════════════════════════════ */
+        document.getElementById("export-csv-btn").addEventListener("click", function () {
+            if (currentStudents.length === 0) return;
+
+            var headers = ["Rank", "Student", "Level", "Level Title", "XP", "Exercises", "Streak", "Longest Streak", "Badges", "Badge List", "Last Active", "Completed Exercise IDs"];
+            var rows = [headers.join(",")];
+
+            for (var i = 0; i < currentStudents.length; i++) {
+                var st = currentStudents[i];
+                var row = [
+                    i + 1,
+                    '"' + (st.nickname || "Unknown").replace(/"/g, '""') + '"',
+                    st.level || 1,
+                    '"' + (st.levelTitle || "").replace(/"/g, '""') + '"',
+                    st.totalXP || 0,
+                    st.totalExercises || 0,
+                    st.currentStreak || 0,
+                    st.longestStreak || 0,
+                    (st.earnedBadges || []).length,
+                    '"' + (st.earnedBadges || []).join("; ") + '"',
+                    st.updatedAt ? new Date(st.updatedAt).toLocaleDateString("en-GB") : "",
+                    '"' + (st.completedExerciseIds || []).join("; ") + '"'
+                ];
+                rows.push(row.join(","));
+            }
+
+            var csv = rows.join("\n");
+            var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "pythonlab-" + currentClassCode + "-" + new Date().toISOString().split("T")[0] + ".csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        /* ═══════════════════════════════════════════
+           ASSIGNMENTS TAB
+           ═══════════════════════════════════════════ */
+        function loadAssignments() {
+            var list = document.getElementById("assignments-list");
+            var noMsg = document.getElementById("no-assignments");
+            list.innerHTML = '<p class="text-center text-sm text-slate-400 py-8">Loading...</p>';
+            noMsg.classList.add("hidden");
+
+            // Load for all classes
+            FirebaseSync.getAllClasses().then(function (classes) {
+                var promises = [];
+                for (var c = 0; c < classes.length; c++) {
+                    promises.push(FirebaseSync.getAssignments(classes[c].code));
+                }
+                return Promise.all(promises);
+            }).then(function (results) {
+                var all = [];
+                for (var r = 0; r < results.length; r++) {
+                    all = all.concat(results[r]);
+                }
+
+                if (all.length === 0) {
+                    list.innerHTML = "";
+                    noMsg.classList.remove("hidden");
+                    return;
+                }
+
+                // Sort by due date
+                all.sort(function (a, b) {
+                    return (a.dueDate || "").localeCompare(b.dueDate || "");
+                });
+
+                list.innerHTML = "";
+                for (var i = 0; i < all.length; i++) {
+                    renderAssignmentCard(list, all[i]);
+                }
+            });
+        }
+
+        function renderAssignmentCard(container, assignment) {
+            // Resolve target exercises
+            var targetIds = resolveTargetIds(assignment.target || "");
+            var classCode = assignment.classCode;
+
+            // Count completion from current students if same class
+            var completionHtml = "";
+            if (classCode === currentClassCode && currentStudents.length > 0) {
+                var completedCount = 0;
+                for (var s = 0; s < currentStudents.length; s++) {
+                    var stCompleted = currentStudents[s].completedExerciseIds || [];
+                    var stSet = {};
+                    for (var c = 0; c < stCompleted.length; c++) stSet[stCompleted[c]] = true;
+                    var allDone = true;
+                    for (var t = 0; t < targetIds.length; t++) {
+                        if (!stSet[targetIds[t]]) { allDone = false; break; }
+                    }
+                    if (allDone) completedCount++;
+                }
+                completionHtml = '<span class="text-xs font-semibold ' + (completedCount === currentStudents.length ? 'text-emerald-600' : 'text-slate-500') + '">' + completedCount + '/' + currentStudents.length + ' complete</span>';
+            }
+
+            var isPast = assignment.dueDate && assignment.dueDate < new Date().toISOString().split("T")[0];
+
+            var card = document.createElement("div");
+            card.className = "rounded-xl border bg-white shadow-sm p-4 " + (isPast ? "border-slate-200 opacity-60" : "border-slate-200");
+            card.innerHTML =
+                '<div class="flex items-center justify-between mb-2">' +
+                    '<div class="flex items-center gap-2">' +
+                        '<span class="text-xs font-mono font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">' + escHtml(assignment.classCode) + '</span>' +
+                        (assignment.dueDate ? '<span class="text-xs text-slate-400">Due: ' + escHtml(assignment.dueDate) + (isPast ? ' (past)' : '') + '</span>' : '') +
+                    '</div>' +
+                    '<div class="flex items-center gap-2">' +
+                        completionHtml +
+                        '<button class="text-xs text-red-400 hover:text-red-600 transition-colors" data-delete-id="' + escHtml(assignment.id) + '">Delete</button>' +
+                    '</div>' +
+                '</div>' +
+                '<p class="text-sm font-semibold text-slate-800">' + escHtml(assignment.description || "Untitled") + '</p>' +
+                '<p class="text-xs text-slate-400 mt-1">Target: ' + escHtml(assignment.target || "none") + ' (' + targetIds.length + ' exercises)</p>';
+
+            var deleteBtn = card.querySelector("[data-delete-id]");
+            deleteBtn.addEventListener("click", function () {
+                var id = this.dataset.deleteId;
+                FirebaseSync.deleteAssignment(id).then(function () { loadAssignments(); });
+            });
+
+            container.appendChild(card);
+        }
+
+        function resolveTargetIds(target) {
+            target = target.trim();
+            if (!target) return [];
+            // If it matches a topic id, return all exercises in that topic
+            if (topicLookup[target]) return topicLookup[target].exerciseIds.slice();
+            // Otherwise treat as comma-separated exercise IDs
+            return target.split(",").map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+        }
+
+        document.getElementById("assign-save-btn").addEventListener("click", function () {
+            var classCode = document.getElementById("assign-class").value;
+            var dueDate = document.getElementById("assign-due").value;
+            var desc = document.getElementById("assign-desc").value.trim();
+            var target = document.getElementById("assign-target").value.trim();
+
+            if (!classCode || !desc) {
+                alert("Please select a class and enter a description.");
+                return;
+            }
+
+            FirebaseSync.saveAssignment({
+                classCode: classCode,
+                dueDate: dueDate,
+                description: desc,
+                target: target,
+                createdAt: new Date().toISOString()
+            }).then(function () {
+                document.getElementById("assign-desc").value = "";
+                document.getElementById("assign-target").value = "";
+                document.getElementById("assign-due").value = "";
+                loadAssignments();
+            });
+        });
+
+        /* ═══════════════════════════════════════════
+           MANAGE CLASSES TAB
+           ═══════════════════════════════════════════ */
+        function loadManagedClasses() {
+            var list = document.getElementById("class-list");
+            var noMsg = document.getElementById("no-classes");
+            list.innerHTML = '<p class="text-center text-sm text-slate-400 py-8">Loading...</p>';
+            noMsg.classList.add("hidden");
+
+            Promise.all([FirebaseSync.getManagedClasses(), FirebaseSync.getAllClasses()])
+                .then(function (results) {
+                    var managed = results[0];
+                    var active = results[1];
+
+                    // Merge: show managed classes plus any active classes with students
+                    var codeMap = {};
+                    for (var m = 0; m < managed.length; m++) {
+                        codeMap[managed[m].code] = { code: managed[m].code, label: managed[m].label || "", students: 0, managed: true, createdAt: managed[m].createdAt };
+                    }
+                    for (var a = 0; a < active.length; a++) {
+                        if (!codeMap[active[a].code]) {
+                            codeMap[active[a].code] = { code: active[a].code, label: "", students: 0, managed: false };
+                        }
+                        codeMap[active[a].code].students = active[a].count;
+                    }
+
+                    var codes = Object.values(codeMap);
+                    if (codes.length === 0) {
+                        list.innerHTML = "";
+                        noMsg.classList.remove("hidden");
+                        return;
+                    }
+
+                    list.innerHTML = "";
+                    for (var i = 0; i < codes.length; i++) {
+                        var c = codes[i];
+                        var card = document.createElement("div");
+                        card.className = "rounded-xl border border-slate-200 bg-white shadow-sm p-4 flex items-center justify-between";
+                        card.innerHTML =
+                            '<div>' +
+                                '<span class="text-base font-mono font-bold text-slate-900">' + escHtml(c.code) + '</span>' +
+                                (c.label ? '<span class="text-sm text-slate-400 ml-2">' + escHtml(c.label) + '</span>' : '') +
+                                '<div class="text-xs text-slate-400 mt-0.5">' + c.students + ' student' + (c.students !== 1 ? 's' : '') + '</div>' +
+                            '</div>' +
+                            '<button class="text-xs text-red-400 hover:text-red-600 transition-colors" data-delete-code="' + escHtml(c.code) + '">Delete</button>';
+
+                        var deleteBtn = card.querySelector("[data-delete-code]");
+                        deleteBtn.addEventListener("click", function () {
+                            var code = this.dataset.deleteCode;
+                            if (confirm("Delete class code " + code + "? This won't remove student data.")) {
+                                FirebaseSync.deleteClassCode(code).then(function () { loadManagedClasses(); });
+                            }
+                        });
+
+                        list.appendChild(card);
+                    }
+                });
+        }
+
+        document.getElementById("create-class-btn").addEventListener("click", function () {
+            var code = document.getElementById("new-class-code").value.trim().toUpperCase();
+            var label = document.getElementById("new-class-label").value.trim();
+            if (!code) { alert("Please enter a class code."); return; }
+
+            FirebaseSync.createClassCode(code, label).then(function () {
+                document.getElementById("new-class-code").value = "";
+                document.getElementById("new-class-label").value = "";
+                loadManagedClasses();
+                // Also refresh the class dropdown
+                var opt = document.createElement("option");
+                opt.value = code;
+                opt.textContent = code + " (0 students)";
+                classSelect.appendChild(opt);
+            });
+        });
+
+        /* ═══════════════════════════════════════════
+           UTILITIES
+           ═══════════════════════════════════════════ */
+        function escHtml(str) {
+            var div = document.createElement("div");
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+    })();
+    </script>
+</body>
+</html>

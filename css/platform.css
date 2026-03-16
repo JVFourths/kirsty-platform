@@ -1,0 +1,95 @@
+/* Python Lab — Custom styles */
+
+/* Smooth scrolling */
+html { scroll-behavior: smooth; }
+
+/* Code editor styling */
+.cm-editor {
+    font-size: 14px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+.cm-editor .cm-scroller {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    line-height: 1.6;
+}
+
+/* Output panel */
+.output-panel {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.output-panel .error {
+    color: #ef4444;
+}
+
+.output-panel .success {
+    color: #22c55e;
+}
+
+/* Exercise cards */
+.exercise-card {
+    transition: all 0.2s ease;
+}
+
+.exercise-card:hover {
+    transform: translateY(-2px);
+}
+
+/* PRIMM stage badges */
+.primm-badge {
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.primm-predict { background: #dbeafe; color: #1d4ed8; }
+.primm-run { background: #dcfce7; color: #15803d; }
+.primm-investigate { background: #fef3c7; color: #a16207; }
+.primm-modify { background: #ede9fe; color: #6d28d9; }
+.primm-make { background: #fce7f3; color: #be185d; }
+
+/* Completed exercise checkmark */
+.exercise-complete {
+    position: relative;
+}
+
+.exercise-complete::after {
+    content: '';
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #22c55e;
+    border-radius: 50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' width='14' height='14'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px;
+}
+
+/* Pulse animation for loading */
+@keyframes pulse-dot {
+    0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+.loading-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6366f1;
+    animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }

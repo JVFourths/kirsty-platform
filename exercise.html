@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en-GB" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise — Python Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe',
+                            300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1',
+                            600: '#4f46e5', 700: '#4338ca', 800: '#3730a3',
+                            900: '#312e81', 950: '#1e1b4b',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/platform.css">
+    <link rel="stylesheet" href="css/gamification.css">
+
+    <!-- CodeMirror 6 via CDN bundles -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <link  rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+    <!-- Monokai-ish theme -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+
+    <style>
+        /* CodeMirror overrides for a clean look */
+        .CodeMirror {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            height: auto;
+            min-height: 120px;
+            max-height: 400px;
+            border-radius: 0.75rem;
+            padding: 0.25rem 0;
+        }
+        .CodeMirror-scroll { min-height: 120px; }
+        .CodeMirror-gutters { border-right: none; background: transparent; }
+
+        /* Read-only code display for predict exercises */
+        .code-display {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 15px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.25rem 1.5rem;
+            color: #1e293b;
+        }
+        .code-display .keyword { color: #7c3aed; font-weight: 600; }
+        .code-display .string  { color: #059669; }
+        .code-display .builtin { color: #2563eb; }
+        .code-display .comment { color: #94a3b8; font-style: italic; }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased">
+
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-14 items-center justify-between">
+                <a href="index.html" class="flex items-center gap-2.5">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-mono font-bold text-sm shadow-sm">
+                        Py
+                    </div>
+                    <span class="text-lg font-semibold tracking-tight">Python Lab</span>
+                </a>
+                <div class="flex items-center gap-4">
+                    <!-- XP & Level display -->
+                    <div id="header-xp" class="hidden sm:flex items-center gap-2">
+                        <span id="header-level-icon" class="text-lg leading-none"></span>
+                        <div class="flex flex-col">
+                            <span id="header-level-title" class="text-xs font-semibold text-slate-700 leading-none"></span>
+                            <div class="xp-bar-container w-20 mt-1">
+                                <div id="header-xp-bar" class="xp-bar-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <span id="header-xp-text" class="text-xs font-bold text-brand-600"></span>
+                    </div>
+                    <!-- Streak -->
+                    <div id="header-streak" class="hidden sm:flex items-center gap-1 text-sm">
+                        <span>🔥</span>
+                        <span id="header-streak-count" class="font-bold text-amber-600">0</span>
+                    </div>
+                    <a id="back-link" href="topics.html?year=7" class="text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                        </svg>
+                        Back to Topics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Loading overlay for Pyodide -->
+        <div id="pyodide-loading" class="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm mb-6">
+            <div class="flex justify-center gap-1 mb-4">
+                <span class="loading-dot"></span>
+                <span class="loading-dot"></span>
+                <span class="loading-dot"></span>
+            </div>
+            <p class="text-sm text-slate-500">Loading Python environment&hellip;</p>
+            <p class="text-xs text-slate-400 mt-1">This may take a few seconds the first time.</p>
+        </div>
+
+        <!-- Exercise content (hidden until Pyodide loads) -->
+        <div id="exercise-content" class="hidden space-y-6">
+
+            <!-- Exercise header -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span id="primm-badge" class="primm-badge primm-predict">Predict</span>
+                    <span id="exercise-number" class="text-xs text-slate-400">Exercise 1 of 4</span>
+                </div>
+                <h1 id="exercise-title" class="text-xl font-bold tracking-tight text-slate-900">Exercise Title</h1>
+                <p id="exercise-instructions" class="mt-2 text-sm text-slate-600 leading-relaxed whitespace-pre-line"></p>
+            </div>
+
+            <!-- Read-only code display for PREDICT exercises (bright, clear, impossible to miss) -->
+            <div id="predict-code-section" class="hidden">
+                <span class="text-sm font-medium text-slate-700 mb-2 block">Read this code carefully:</span>
+                <div id="code-display" class="code-display"></div>
+            </div>
+
+            <!-- Predict mode: prediction input -->
+            <div id="predict-section" class="hidden rounded-xl border-2 border-blue-200 bg-blue-50/60 p-5">
+                <label for="prediction-input" class="block text-sm font-semibold text-blue-900 mb-2">
+                    What do you think the code above will print?
+                </label>
+                <textarea id="prediction-input" rows="2"
+                    class="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm font-mono focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none transition-all"
+                    placeholder="Type your prediction here..."></textarea>
+                <p class="text-xs text-blue-400 mt-1.5">Write your answer, then press Run Code to check.</p>
+            </div>
+
+            <!-- Editable code editor for non-predict exercises -->
+            <div id="editor-section">
+                <div class="flex items-center justify-between mb-2">
+                    <span id="code-label" class="text-sm font-medium text-slate-700">Code</span>
+                    <button id="reset-code-btn" class="text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                        </svg>
+                        Reset code
+                    </button>
+                </div>
+                <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                    <textarea id="code-editor"></textarea>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center gap-3">
+                <button id="run-btn" disabled
+                    class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/25 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                    </svg>
+                    Run Code
+                </button>
+                <button id="hint-btn" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98]">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                    </svg>
+                    Hint
+                </button>
+            </div>
+
+            <!-- Hint panel -->
+            <div id="hint-panel" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div class="flex items-start gap-2">
+                    <svg class="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                    </svg>
+                    <p id="hint-text" class="text-sm text-amber-800"></p>
+                </div>
+            </div>
+
+            <!-- Output panel -->
+            <div>
+                <span class="text-sm font-medium text-slate-700 mb-2 block">Output</span>
+                <div id="output-panel" class="output-panel rounded-xl border border-slate-200 bg-slate-900 text-slate-100 p-4 min-h-[80px] shadow-sm">
+                    <span class="text-slate-500 text-sm italic">Run your code to see the output here.</span>
+                </div>
+            </div>
+
+            <!-- Comprehension check for Run & Investigate exercises (appears after first run) -->
+            <div id="comprehension-section" class="hidden rounded-xl border-2 border-green-200 bg-green-50/60 p-5">
+                <label for="comprehension-input" class="block text-sm font-semibold text-green-900 mb-2" id="comprehension-label">
+                    Now explain: what does each line of this code do?
+                </label>
+                <textarea id="comprehension-input" rows="3"
+                    class="w-full rounded-lg border border-green-200 bg-white px-4 py-3 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none transition-all"
+                    placeholder="Explain in your own words..."></textarea>
+                <div class="flex items-center justify-between mt-2">
+                    <p class="text-xs text-green-500">Write at least a sentence to show you understand the code.</p>
+                    <button id="comprehension-submit" class="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 active:scale-[0.98] transition-all">
+                        Submit
+                    </button>
+                </div>
+            </div>
+
+            <!-- Result feedback -->
+            <div id="feedback-panel" class="hidden rounded-xl p-4">
+                <div class="flex items-center gap-3">
+                    <div id="feedback-icon"></div>
+                    <div>
+                        <p id="feedback-title" class="font-semibold text-sm"></p>
+                        <p id="feedback-message" class="text-sm mt-0.5"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex items-center justify-between pt-4 border-t border-slate-200">
+                <button id="prev-btn" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                    </svg>
+                    Previous
+                </button>
+                <button id="next-btn" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-brand-600 hover:text-brand-700 hover:bg-brand-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                    Next
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script src="data/exercises.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/gamification.js"></script>
+    <script src="js/celebrations.js"></script>
+    <script src="js/firebase-sync.js"></script>
+
+    <script>
+    (function () {
+        /* ── Simple Python syntax highlighter for read-only display ── */
+        function highlightPython(code) {
+            // Escape HTML first
+            var escaped = code
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // Highlight strings (double and single quoted)
+            escaped = escaped.replace(/(["'])(?:(?!\1|\\).|\\.)*\1/g,
+                '<span class="string">$&</span>');
+
+            // Highlight comments
+            escaped = escaped.replace(/(#.*)/g,
+                '<span class="comment">$1</span>');
+
+            // Highlight keywords
+            var keywords = ['def', 'return', 'if', 'elif', 'else', 'for', 'while', 'in', 'import', 'from', 'as', 'class', 'try', 'except', 'finally', 'with', 'not', 'and', 'or', 'True', 'False', 'None', 'break', 'continue', 'pass'];
+            for (var k = 0; k < keywords.length; k++) {
+                var re = new RegExp('\\b(' + keywords[k] + ')\\b', 'g');
+                escaped = escaped.replace(re, function (match) {
+                    // Don't highlight if already inside a span
+                    return '<span class="keyword">' + match + '</span>';
+                });
+            }
+
+            // Highlight built-in functions
+            var builtins = ['print', 'input', 'int', 'str', 'float', 'len', 'range', 'open', 'type', 'list', 'dict', 'set', 'tuple', 'bool', 'abs', 'max', 'min', 'sum', 'sorted', 'enumerate'];
+            for (var b = 0; b < builtins.length; b++) {
+                var re2 = new RegExp('\\b(' + builtins[b] + ')(?=\\()', 'g');
+                escaped = escaped.replace(re2,
+                    '<span class="builtin">$1</span>');
+            }
+
+            return escaped;
+        }
+
+        /* ── Parse query params ── */
+        var params  = new URLSearchParams(window.location.search);
+        var yearKey = params.get("year") || "7";
+        var topicId = params.get("topic");
+        var exId    = params.get("ex");
+
+        var yearData = EXERCISES[yearKey];
+        if (!yearData) { window.location.href = "index.html"; return; }
+
+        // Find topic & exercise
+        var topic, exercise, exerciseIndex, allExercises = [];
+        var topics = yearData.topics || [];
+        for (var t = 0; t < topics.length; t++) {
+            if (topics[t].id === topicId) {
+                topic = topics[t];
+                allExercises = topic.exercises || [];
+                for (var e = 0; e < allExercises.length; e++) {
+                    if (allExercises[e].id === exId) {
+                        exercise = allExercises[e];
+                        exerciseIndex = e;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        if (!exercise) { window.location.href = "topics.html?year=" + yearKey; return; }
+
+        // Set back link
+        document.getElementById("back-link").href = "topics.html?year=" + yearKey;
+
+        /* ── PRIMM badge mapping ── */
+        var primmClasses = {
+            predict: "primm-badge primm-predict", run: "primm-badge primm-run",
+            investigate: "primm-badge primm-investigate", modify: "primm-badge primm-modify",
+            make: "primm-badge primm-make"
+        };
+        var primmLabels = {
+            predict: "Predict", run: "Run", investigate: "Investigate", modify: "Modify", make: "Make"
+        };
+
+        /* ── Populate exercise info ── */
+        document.getElementById("exercise-title").textContent = exercise.title;
+        document.getElementById("exercise-instructions").textContent = exercise.instructions;
+        document.getElementById("exercise-number").textContent =
+            "Exercise " + (exerciseIndex + 1) + " of " + allExercises.length + " — " + topic.title;
+        document.title = exercise.title + " — Python Lab";
+
+        var badge = document.getElementById("primm-badge");
+        badge.className = primmClasses[exercise.type] || "primm-badge";
+        badge.textContent = primmLabels[exercise.type] || exercise.type;
+
+        // Predict exercises: show bright code display + prediction box, hide editor
+        // Other exercises: show editable CodeMirror editor, hide predict sections
+        if (exercise.type === "predict") {
+            document.getElementById("predict-code-section").classList.remove("hidden");
+            document.getElementById("predict-section").classList.remove("hidden");
+            document.getElementById("editor-section").classList.add("hidden");
+
+            // Render syntax-highlighted code in the bright display
+            var codeDisplay = document.getElementById("code-display");
+            codeDisplay.innerHTML = highlightPython(exercise.starterCode || "");
+        } else {
+            document.getElementById("predict-code-section").classList.add("hidden");
+            document.getElementById("predict-section").classList.add("hidden");
+            document.getElementById("editor-section").classList.remove("hidden");
+        }
+
+        // Hint
+        document.getElementById("hint-text").textContent = exercise.hint || "No hint available.";
+        document.getElementById("hint-btn").addEventListener("click", function () {
+            document.getElementById("hint-panel").classList.toggle("hidden");
+        });
+
+        /* ── Navigation ── */
+        var prevBtn = document.getElementById("prev-btn");
+        var nextBtn = document.getElementById("next-btn");
+
+        if (exerciseIndex === 0) prevBtn.disabled = true;
+        if (exerciseIndex === allExercises.length - 1) {
+            nextBtn.textContent = "Back to Topics";
+            nextBtn.innerHTML = 'Back to Topics <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>';
+        }
+
+        prevBtn.addEventListener("click", function () {
+            if (exerciseIndex > 0) {
+                var prev = allExercises[exerciseIndex - 1];
+                window.location.href = "exercise.html?year=" + yearKey + "&topic=" + topicId + "&ex=" + prev.id;
+            }
+        });
+        nextBtn.addEventListener("click", function () {
+            if (exerciseIndex < allExercises.length - 1) {
+                var next = allExercises[exerciseIndex + 1];
+                window.location.href = "exercise.html?year=" + yearKey + "&topic=" + topicId + "&ex=" + next.id;
+            } else {
+                window.location.href = "topics.html?year=" + yearKey;
+            }
+        });
+
+        /* ── CodeMirror Editor ── */
+        var editorTextarea = document.getElementById("code-editor");
+        editorTextarea.value = exercise.starterCode || "";
+
+        var editor = CodeMirror.fromTextArea(editorTextarea, {
+            mode: "python",
+            theme: "dracula",
+            lineNumbers: true,
+            indentUnit: 4,
+            tabSize: 4,
+            indentWithTabs: false,
+            lineWrapping: true,
+            viewportMargin: Infinity,
+            extraKeys: {
+                "Tab": function (cm) {
+                    cm.replaceSelection("    ", "end");
+                },
+                "Ctrl-Enter": function () { runCode(); },
+                "Cmd-Enter": function () { runCode(); }
+            }
+        });
+
+        // Reset code button
+        document.getElementById("reset-code-btn").addEventListener("click", function () {
+            if (confirm("Reset the code back to the original?")) {
+                editor.setValue(exercise.starterCode || "");
+                clearOutput();
+                hideFeedback();
+            }
+        });
+
+        /* ── Output helpers ── */
+        var outputPanel = document.getElementById("output-panel");
+
+        function clearOutput() {
+            outputPanel.innerHTML = '<span class="text-slate-500 text-sm italic">Run your code to see the output here.</span>';
+        }
+
+        function showOutput(text, isError) {
+            outputPanel.textContent = "";
+            var span = document.createElement("span");
+            span.className = isError ? "error" : "";
+            span.textContent = text || "(no output)";
+            outputPanel.appendChild(span);
+        }
+
+        /* ── Feedback helpers ── */
+        function hideFeedback() {
+            document.getElementById("feedback-panel").classList.add("hidden");
+        }
+
+        function showFeedback(success, title, message) {
+            var panel = document.getElementById("feedback-panel");
+            panel.classList.remove("hidden");
+
+            if (success) {
+                panel.className = "rounded-xl p-4 border border-emerald-200 bg-emerald-50";
+                document.getElementById("feedback-icon").innerHTML =
+                    '<svg class="h-8 w-8 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>';
+                document.getElementById("feedback-title").className = "font-semibold text-sm text-emerald-800";
+            } else {
+                panel.className = "rounded-xl p-4 border border-amber-200 bg-amber-50";
+                document.getElementById("feedback-icon").innerHTML =
+                    '<svg class="h-8 w-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></svg>';
+                document.getElementById("feedback-title").className = "font-semibold text-sm text-amber-800";
+            }
+
+            document.getElementById("feedback-title").textContent = title;
+            document.getElementById("feedback-message").textContent = message;
+            document.getElementById("feedback-message").className = "text-sm mt-0.5 " + (success ? "text-emerald-700" : "text-amber-700");
+        }
+
+        /* ── Pyodide ── */
+        var pyodide = null;
+
+        async function loadPyodideRuntime() {
+            try {
+                // Load Pyodide from CDN
+                var script = document.createElement("script");
+                script.src = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js";
+                document.head.appendChild(script);
+
+                await new Promise(function (resolve, reject) {
+                    script.onload = resolve;
+                    script.onerror = function () { reject(new Error("Failed to load Pyodide script")); };
+                });
+
+                pyodide = await loadPyodide({
+                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"
+                });
+
+                // Set up a virtual filesystem for file handling exercises
+                pyodide.FS.writeFile("/tmp/test.txt", "");
+
+                // Replace input() with a browser prompt
+                pyodide.runPython(`
+import builtins
+_original_input = builtins.input
+
+def _browser_input(prompt=""):
+    from js import prompt as js_prompt
+    result = js_prompt(str(prompt))
+    if result is None:
+        result = ""
+    print(str(prompt) + str(result))
+    return result
+
+builtins.input = _browser_input
+`);
+
+                document.getElementById("pyodide-loading").classList.add("hidden");
+                document.getElementById("exercise-content").classList.remove("hidden");
+                document.getElementById("run-btn").disabled = false;
+
+                // CodeMirror must be refreshed after the container becomes visible,
+                // otherwise text won't render (it calculates layout on refresh).
+                if (editor && typeof editor.refresh === "function") {
+                    setTimeout(function () { editor.refresh(); }, 50);
+                }
+            } catch (err) {
+                document.getElementById("pyodide-loading").innerHTML =
+                    '<p class="text-red-500 text-sm font-medium">Failed to load Python environment.</p>' +
+                    '<p class="text-slate-400 text-xs mt-1">' + err.message + '</p>' +
+                    '<button onclick="location.reload()" class="mt-3 text-sm text-brand-600 hover:text-brand-700 font-medium">Try again</button>';
+            }
+        }
+
+        loadPyodideRuntime();
+
+        /* ── Run code ── */
+        var runBtn = document.getElementById("run-btn");
+        runBtn.addEventListener("click", runCode);
+
+        function runCode() {
+            if (!pyodide) return;
+
+            // For predict exercises, use the original starter code (editor is hidden)
+            var code = exercise.type === "predict"
+                ? (exercise.starterCode || "")
+                : editor.getValue();
+            hideFeedback();
+
+            // Capture stdout
+            pyodide.runPython(`
+import sys, io
+sys.stdout = io.StringIO()
+sys.stderr = io.StringIO()
+`);
+
+            var output = "";
+            var hasError = false;
+
+            try {
+                pyodide.runPython(code);
+                output = pyodide.runPython("sys.stdout.getvalue()");
+            } catch (err) {
+                hasError = true;
+                // Extract just the useful part of the error
+                var errMsg = err.message || String(err);
+                // Clean up Pyodide traceback for student readability
+                var lines = errMsg.split("\n");
+                var cleanLines = [];
+                var capture = false;
+                for (var i = 0; i < lines.length; i++) {
+                    if (lines[i].match(/^(Traceback|  File|    |.*Error|.*Exception)/)) {
+                        capture = true;
+                    }
+                    if (capture) cleanLines.push(lines[i]);
+                }
+                output = cleanLines.length > 0 ? cleanLines.join("\n") : errMsg;
+            }
+
+            // Reset stdout/stderr
+            try {
+                pyodide.runPython("sys.stdout = sys.__stdout__; sys.stderr = sys.__stderr__");
+            } catch (e) {}
+
+            // Display output
+            output = output.replace(/\n$/, ""); // trim trailing newline
+            showOutput(output, hasError);
+
+            // If error, don't check correctness
+            if (hasError) {
+                showFeedback(false, "Error in your code", "Check the error message above and try again.");
+                return;
+            }
+
+            // Check correctness
+            attemptCount++;
+            checkAnswer(output);
+        }
+
+        /* ── Comprehension tracking for Run & Investigate ── */
+        var runCount = 0;           // how many times the student has pressed Run
+        var codeChangedSinceRun = false;  // whether the code was edited between runs
+
+        // Track code changes for Investigate exercises
+        if (editor) {
+            editor.on("change", function () { codeChangedSinceRun = true; });
+        }
+
+        // Comprehension questions per exercise type
+        var comprehensionPrompts = {
+            run: [
+                "What does each line of this code do? Explain in your own words.",
+                "Why does the output look the way it does? Describe what happened."
+            ],
+            investigate: [
+                "What did you change, and how did the output differ?",
+                "What did you learn by experimenting with the code?"
+            ]
+        };
+
+        // Comprehension submit handler
+        document.getElementById("comprehension-submit").addEventListener("click", function () {
+            var answer = document.getElementById("comprehension-input").value.trim();
+            if (answer.length < 10) {
+                showFeedback(false, "Write a bit more", "Try to write at least a full sentence explaining what you observed.");
+                return;
+            }
+            markComplete();
+            document.getElementById("comprehension-section").classList.add("hidden");
+            showFeedback(true, "Well done!", "Great explanation. Understanding what code does is just as important as writing it.");
+        });
+
+        function checkAnswer(output) {
+            var trimmedOutput = output.trim();
+
+            // For predict exercises, compare prediction to actual output
+            if (exercise.type === "predict" && exercise.expectedOutput !== null) {
+                var prediction = document.getElementById("prediction-input").value.trim();
+                if (prediction && prediction === exercise.expectedOutput.trim()) {
+                    markComplete({ predictionCorrect: true });
+                    showFeedback(true, "Brilliant!", "Your prediction was spot on. You understand this concept well.");
+                    return;
+                } else if (prediction) {
+                    showFeedback(false, "Not quite", "Your prediction didn't match the output. Compare them — can you see why?");
+                    return;
+                }
+            }
+
+            // ── Run exercises: show output, then ask a comprehension question ──
+            if (exercise.type === "run") {
+                runCount++;
+                if (runCount === 1) {
+                    // First run — show comprehension question
+                    var prompts = comprehensionPrompts.run;
+                    document.getElementById("comprehension-label").textContent =
+                        prompts[Math.floor(Math.random() * prompts.length)];
+                    document.getElementById("comprehension-section").classList.remove("hidden");
+                    showFeedback(false, "Code ran successfully", "Now answer the question below to show you understand what happened.");
+                }
+                return;
+            }
+
+            // ── Investigate exercises: require at least 2 runs with a code change ──
+            if (exercise.type === "investigate") {
+                runCount++;
+                if (runCount === 1) {
+                    showFeedback(false, "Good — you've run it once",
+                        "Now change something in the code (a value, a variable) and run it again to see what happens.");
+                    codeChangedSinceRun = false;
+                    return;
+                }
+                if (runCount >= 2 && codeChangedSinceRun) {
+                    // They ran it, changed code, ran again — show comprehension question
+                    var iprompts = comprehensionPrompts.investigate;
+                    document.getElementById("comprehension-label").textContent =
+                        iprompts[Math.floor(Math.random() * iprompts.length)];
+                    document.getElementById("comprehension-section").classList.remove("hidden");
+                    showFeedback(false, "Nice experimenting!", "Now answer the question below about what you discovered.");
+                    return;
+                }
+                if (runCount >= 2 && !codeChangedSinceRun) {
+                    showFeedback(false, "Try changing something first",
+                        "Edit the code — change a number, a word, or a variable — then run it again.");
+                    return;
+                }
+                return;
+            }
+
+            // ── Modify & Make exercises: check expected output or checkFn ──
+            // Check expectedOutput (exact match)
+            if (exercise.expectedOutput !== null) {
+                if (trimmedOutput === exercise.expectedOutput.trim()) {
+                    markComplete();
+                    showFeedback(true, "Correct!", getSuccessMessage());
+                } else {
+                    showFeedback(false, "Not quite right", "Your output doesn't match what's expected. Check the hint if you're stuck.");
+                }
+                return;
+            }
+
+            // Check with checkFn (custom validation)
+            if (exercise.checkFn) {
+                try {
+                    var passed = new Function("output", "return (" + exercise.checkFn + ");")(trimmedOutput);
+                    if (passed) {
+                        markComplete();
+                        showFeedback(true, "Well done!", getSuccessMessage());
+                    } else {
+                        showFeedback(false, "Keep trying", "Your code ran, but the output doesn't quite meet the requirements yet.");
+                    }
+                } catch (e) {
+                    showFeedback(false, "Code ran", "Check whether your output meets the requirements in the instructions.");
+                }
+                return;
+            }
+        }
+
+        /* ── Track attempts for first-try bonus ── */
+        var attemptCount = 0;
+
+        function markComplete(opts) {
+            opts = opts || {};
+            Progress.complete(exercise.id);
+
+            // Gamification: award XP, check badges, trigger animations
+            var result = Gamification.completeExercise(exercise.id, exercise.type, {
+                firstTry: attemptCount <= 1,
+                predictionCorrect: opts.predictionCorrect || false
+            });
+
+            // Trigger celebration animations
+            var runBtn = document.getElementById("run-btn");
+            Celebrations.celebrate(result, runBtn);
+
+            // Update header XP display
+            _updateHeaderXP();
+
+            // Sync to Firebase (if configured)
+            if (typeof FirebaseSync !== "undefined") {
+                FirebaseSync.syncProgress();
+            }
+        }
+
+        function getSuccessMessage() {
+            var messages = [
+                "Great work! Move to the next exercise when you're ready.",
+                "Fantastic! You're getting the hang of this.",
+                "Nailed it! On to the next one?",
+                "Perfect! You clearly understand this concept.",
+                "Excellent! Keep up the brilliant work."
+            ];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        /* ── Header XP bar & streak display ── */
+        function _updateHeaderXP() {
+            var profile = Gamification.getProfile();
+            var level = profile.level;
+
+            document.getElementById("header-level-icon").textContent = level.icon;
+            document.getElementById("header-level-title").textContent = "Lv " + level.level;
+            document.getElementById("header-xp-bar").style.width = Math.round(level.progress * 100) + "%";
+            document.getElementById("header-xp-text").textContent = profile.totalXP + " XP";
+            document.getElementById("header-streak-count").textContent = profile.currentStreak;
+            document.getElementById("header-xp").classList.remove("hidden");
+            document.getElementById("header-xp").classList.add("flex");
+            document.getElementById("header-streak").classList.remove("hidden");
+            document.getElementById("header-streak").classList.add("flex");
+        }
+
+        // Record visit (daily login XP + streak update)
+        var visitResult = Gamification.recordVisit();
+        Gamification.startExerciseTimer();
+        _updateHeaderXP();
+
+        // Show streak toast if streak > 1
+        if (visitResult.streakChange > 0) {
+            var profile = Gamification.getProfile();
+            if (profile.currentStreak > 1) {
+                setTimeout(function () {
+                    Celebrations.showStreak(profile.currentStreak);
+                }, 1000);
+            }
+        }
+
+    })();
+    </script>
+</body>
+</html>

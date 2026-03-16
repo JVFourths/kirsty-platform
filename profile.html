@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en-GB" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile — Python Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe',
+                            300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1',
+                            600: '#4f46e5', 700: '#4338ca', 800: '#3730a3',
+                            900: '#312e81', 950: '#1e1b4b',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/platform.css">
+    <link rel="stylesheet" href="css/gamification.css">
+</head>
+<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased">
+
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-14 items-center justify-between">
+                <a href="index.html" class="flex items-center gap-2.5">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-mono font-bold text-sm shadow-sm">
+                        Py
+                    </div>
+                    <span class="text-lg font-semibold tracking-tight">Python Lab</span>
+                </a>
+                <a href="index.html" class="text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors flex items-center gap-1">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                    </svg>
+                    Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
+
+        <!-- Profile header -->
+        <div class="flex flex-col sm:flex-row items-center gap-6 mb-10">
+            <!-- Level icon + name -->
+            <div class="flex items-center gap-4">
+                <div id="profile-icon" class="text-5xl leading-none"></div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 id="profile-nickname" class="text-2xl font-bold tracking-tight text-slate-900"></h1>
+                        <button id="edit-name-btn" class="text-slate-400 hover:text-slate-600 transition-colors" title="Change nickname">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                            </svg>
+                        </button>
+                    </div>
+                    <p id="profile-level-title" class="text-sm font-medium text-brand-600"></p>
+                    <!-- XP progress bar -->
+                    <div class="flex items-center gap-3 mt-2">
+                        <div class="xp-bar-container w-48">
+                            <div id="profile-xp-bar" class="xp-bar-fill" style="width: 0%"></div>
+                        </div>
+                        <span id="profile-xp-text" class="text-xs font-semibold text-slate-500"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nickname edit modal (hidden) -->
+        <div id="nickname-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div class="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full mx-4">
+                <h3 class="text-lg font-bold text-slate-900 mb-3">Choose your nickname</h3>
+                <input id="nickname-input" type="text" maxlength="20" placeholder="Enter a nickname..."
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none">
+                <p class="text-xs text-slate-400 mt-1">This is shown on the leaderboard. Max 20 characters.</p>
+                <div class="flex gap-2 mt-4">
+                    <button id="nickname-save" class="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">Save</button>
+                    <button id="nickname-cancel" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+            <div class="stat-card">
+                <div id="stat-xp" class="stat-value">0</div>
+                <div class="stat-label">Total XP</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value flex items-center justify-center gap-1">
+                    <span>🔥</span>
+                    <span id="stat-streak">0</span>
+                </div>
+                <div class="stat-label">Day Streak</div>
+            </div>
+            <div class="stat-card">
+                <div id="stat-exercises" class="stat-value">0</div>
+                <div class="stat-label">Exercises Done</div>
+            </div>
+            <div class="stat-card">
+                <div id="stat-badges" class="stat-value">0</div>
+                <div class="stat-label">Badges Earned</div>
+            </div>
+        </div>
+
+        <!-- Streak info -->
+        <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex items-center gap-3 mb-10">
+            <span class="text-2xl">🔥</span>
+            <div>
+                <p class="text-sm font-semibold text-amber-900">
+                    <span id="streak-message">Start your streak today!</span>
+                </p>
+                <p class="text-xs text-amber-700 mt-0.5">
+                    Longest streak: <strong id="longest-streak">0</strong> days
+                    &nbsp;&middot;&nbsp;
+                    Streak freezes remaining: <strong id="streak-freezes">1</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Badges section -->
+        <div class="mb-10">
+            <h2 class="text-lg font-bold text-slate-900 mb-4">Badges</h2>
+            <div id="badge-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+
+        <!-- Level progression -->
+        <div class="mb-10">
+            <h2 class="text-lg font-bold text-slate-900 mb-4">Level Progression</h2>
+            <div id="level-list" class="space-y-2">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="border-t border-slate-200 mt-auto">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
+            <p class="text-center text-sm text-slate-400">Python Lab — Part of the Kirsty Class Planner</p>
+        </div>
+    </footer>
+
+    <script src="data/exercises.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/gamification.js"></script>
+
+    <script>
+    (function () {
+        var profile = Gamification.getProfile();
+        Gamification.recordVisit();
+
+        // Profile header
+        document.getElementById("profile-icon").textContent = profile.level.icon;
+        document.getElementById("profile-nickname").textContent = profile.nickname || "Student";
+        document.getElementById("profile-level-title").textContent =
+            "Level " + profile.level.level + " — " + profile.level.title;
+        document.getElementById("profile-xp-bar").style.width =
+            Math.round(profile.level.progress * 100) + "%";
+
+        var xpText = profile.level.isMaxLevel
+            ? profile.totalXP + " XP (MAX LEVEL!)"
+            : profile.level.xpIntoLevel + " / " + profile.level.xpForNextLevel + " XP to next level";
+        document.getElementById("profile-xp-text").textContent = xpText;
+
+        // Stats
+        document.getElementById("stat-xp").textContent = profile.totalXP;
+        document.getElementById("stat-streak").textContent = profile.currentStreak;
+        document.getElementById("stat-exercises").textContent = profile.totalExercises;
+        var badgeCount = Object.keys(profile.earnedBadges).length;
+        document.getElementById("stat-badges").textContent = badgeCount;
+
+        // Streak info
+        var streakMsg = profile.currentStreak === 0
+            ? "Start your streak today!"
+            : profile.currentStreak === 1
+                ? "You started a streak today! Come back tomorrow to keep it going."
+                : "You're on a " + profile.currentStreak + " day streak! Keep it up!";
+        document.getElementById("streak-message").textContent = streakMsg;
+        document.getElementById("longest-streak").textContent = profile.longestStreak;
+        document.getElementById("streak-freezes").textContent = profile.streakFreezes;
+
+        // Badges
+        var badgeGrid = document.getElementById("badge-grid");
+        for (var i = 0; i < profile.allBadges.length; i++) {
+            var b = profile.allBadges[i];
+            var earned = !!profile.earnedBadges[b.id];
+            var card = document.createElement("div");
+            card.className = "badge-card " + (earned ? "earned" : "locked");
+            card.innerHTML =
+                '<div class="badge-card-icon">' + b.icon + '</div>' +
+                '<div class="badge-card-title">' + b.title + '</div>' +
+                '<div class="badge-card-desc">' + b.desc + '</div>';
+            badgeGrid.appendChild(card);
+        }
+
+        // Levels
+        var levelList = document.getElementById("level-list");
+        for (var l = 0; l < profile.allLevels.length; l++) {
+            var lv = profile.allLevels[l];
+            var reached = profile.totalXP >= lv.xpRequired;
+            var isCurrent = profile.level.level === lv.level;
+            var row = document.createElement("div");
+            row.className = "flex items-center gap-3 rounded-lg px-3 py-2 " +
+                (isCurrent ? "bg-brand-50 border border-brand-200" : reached ? "bg-white" : "opacity-40");
+            row.innerHTML =
+                '<span class="text-xl">' + lv.icon + '</span>' +
+                '<div class="flex-1">' +
+                    '<span class="text-sm font-semibold ' + (isCurrent ? 'text-brand-700' : 'text-slate-700') + '">' +
+                        'Level ' + lv.level + ' — ' + lv.title +
+                    '</span>' +
+                '</div>' +
+                '<span class="text-xs font-medium ' + (reached ? 'text-emerald-600' : 'text-slate-400') + '">' +
+                    (reached ? (isCurrent ? 'Current' : 'Reached') : lv.xpRequired + ' XP') +
+                '</span>';
+            levelList.appendChild(row);
+        }
+
+        // Nickname editing
+        var modal = document.getElementById("nickname-modal");
+        var nicknameInput = document.getElementById("nickname-input");
+
+        document.getElementById("edit-name-btn").addEventListener("click", function () {
+            nicknameInput.value = profile.nickname || "";
+            modal.classList.remove("hidden");
+            nicknameInput.focus();
+        });
+        document.getElementById("nickname-cancel").addEventListener("click", function () {
+            modal.classList.add("hidden");
+        });
+        document.getElementById("nickname-save").addEventListener("click", function () {
+            var name = nicknameInput.value.trim();
+            if (name) {
+                Gamification.setNickname(name);
+                document.getElementById("profile-nickname").textContent = name;
+            }
+            modal.classList.add("hidden");
+        });
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) modal.classList.add("hidden");
+        });
+    })();
+    </script>
+</body>
+</html>
