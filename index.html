@@ -459,6 +459,18 @@
                 </a>
             </div>
 
+            <!-- Weekly Leaderboard -->
+            <div id="leaderboard-section" class="hidden max-w-2xl mx-auto mt-6">
+              <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-2 mb-4">
+                  <span class="text-2xl">🏆</span>
+                  <h2 class="text-lg font-bold text-gray-800">This Week's Top 5</h2>
+                </div>
+                <div id="leaderboard-list" class="space-y-2"></div>
+                <div id="leaderboard-own-rank" class="mt-3 pt-3 border-t text-sm text-gray-500"></div>
+              </div>
+            </div>
+
             <!-- Class Activity Feed -->
             <div id="class-feed-section" class="hidden max-w-2xl mx-auto mt-8">
               <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
@@ -998,6 +1010,7 @@
             checkStreakRecovery();
             renderClassFeed();
             renderClassGoal();
+            renderLeaderboard();
             if (typeof Gamification !== 'undefined' && Gamification.applyPerks) {
                 Gamification.applyPerks();
             }
@@ -1198,6 +1211,77 @@
             if (current >= goal.target) {
               document.getElementById("class-goal-title").textContent += " — Completed! 🎉";
             }
+          });
+        }
+
+        function renderLeaderboard() {
+          var student = FirebaseSync.getStudent();
+          if (!student || !student.classCode) return;
+
+          FirebaseSync.getClassSettings(student.classCode).then(function(settings) {
+            if (!settings.leaderboardEnabled) return;
+
+            var section = document.getElementById("leaderboard-section");
+            if (section) section.classList.remove("hidden");
+
+            FirebaseSync.getLeaderboard(student.classCode).then(function(students) {
+              var list = document.getElementById("leaderboard-list");
+              if (!list) return;
+              list.innerHTML = "";
+
+              var isAnonymous = settings.leaderboardAnonymous;
+              var medals = ["🥇", "🥈", "🥉", "4.", "5."];
+              var ownRank = -1;
+              var prevXP = -1;
+              var rank = 0;
+
+              for (var i = 0; i < students.length; i++) {
+                // Handle ties
+                if (students[i].weeklyXP !== prevXP) {
+                  rank = i + 1;
+                  prevXP = students[i].weeklyXP;
+                }
+
+                if (students[i].id === student.id) {
+                  ownRank = rank;
+                }
+
+                if (i < 5) {
+                  var row = document.createElement("div");
+                  var isMe = students[i].id === student.id;
+                  row.className = "flex items-center justify-between py-2 px-3 rounded-lg " + (isMe ? "bg-blue-50" : "");
+
+                  var name = isAnonymous ? (isMe ? student.nickname : "---") : students[i].nickname;
+                  var medal = rank <= 3 ? medals[rank - 1] : (rank + ".");
+
+                  // Use textContent to avoid XSS from user-controlled nicknames
+                  var left = document.createElement("div");
+                  left.className = "flex items-center gap-3";
+                  var medalSpan = document.createElement("span");
+                  medalSpan.className = "text-lg w-8";
+                  medalSpan.textContent = medal;
+                  var nameSpan = document.createElement("span");
+                  nameSpan.className = "font-medium text-gray-700";
+                  nameSpan.textContent = name;
+                  left.appendChild(medalSpan);
+                  left.appendChild(nameSpan);
+                  var xpSpan = document.createElement("span");
+                  xpSpan.className = "text-sm font-semibold text-gray-500";
+                  xpSpan.textContent = students[i].weeklyXP + " XP";
+                  row.appendChild(left);
+                  row.appendChild(xpSpan);
+                  list.appendChild(row);
+                }
+              }
+
+              // Show own rank if outside top 5
+              var ownRankEl = document.getElementById("leaderboard-own-rank");
+              if (ownRankEl && ownRank > 5) {
+                ownRankEl.textContent = "You're #" + ownRank + " this week";
+              } else if (ownRankEl && ownRank <= 5 && ownRank > 0) {
+                ownRankEl.textContent = "";
+              }
+            });
           });
         }
 
