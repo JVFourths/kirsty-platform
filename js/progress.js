@@ -132,6 +132,51 @@ var Progress = (function () {
         }
     }
 
+    function isTopicUnlocked(yearKey, topicIndex) {
+        // First topic is always unlocked
+        if (topicIndex === 0) return true;
+
+        if (typeof EXERCISES === "undefined") return true;
+        var yearData = EXERCISES[yearKey];
+        if (!yearData || !yearData.topics) return true;
+
+        // Check previous topic has >= 50% completion
+        var prevTopic = yearData.topics[topicIndex - 1];
+        if (!prevTopic) return true;
+
+        var progressData = _load();
+        var gameData = null;
+        try {
+            gameData = JSON.parse(localStorage.getItem("pythonlab_game") || "{}");
+        } catch (e) {
+            gameData = {};
+        }
+
+        var done = 0;
+        for (var i = 0; i < prevTopic.exercises.length; i++) {
+            var exId = prevTopic.exercises[i].id;
+            // Check both stores (spec requirement: treat as complete if either records it)
+            var inProgress = progressData[exId] && progressData[exId].completed;
+            var inGame = gameData.completedExercises && gameData.completedExercises[exId];
+            if (inProgress || inGame) done++;
+        }
+
+        var pct = prevTopic.exercises.length > 0 ? done / prevTopic.exercises.length : 0;
+        return pct >= 0.5;
+    }
+
+    function getUnlockCount(yearKey) {
+        if (typeof EXERCISES === "undefined") return { unlocked: 0, total: 0 };
+        var yearData = EXERCISES[yearKey];
+        if (!yearData || !yearData.topics) return { unlocked: 0, total: 0 };
+
+        var unlocked = 0;
+        for (var i = 0; i < yearData.topics.length; i++) {
+            if (isTopicUnlocked(yearKey, i)) unlocked++;
+        }
+        return { unlocked: unlocked, total: yearData.topics.length };
+    }
+
     return {
         complete: complete,
         isComplete: isComplete,
@@ -139,7 +184,9 @@ var Progress = (function () {
         resetAll: resetAll,
         countForYear: countForYear,
         countForTopic: countForTopic,
-        renderLandingBars: renderLandingBars
+        renderLandingBars: renderLandingBars,
+        isTopicUnlocked: isTopicUnlocked,
+        getUnlockCount: getUnlockCount
     };
 })();
 
