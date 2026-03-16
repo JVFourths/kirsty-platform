@@ -87,8 +87,6 @@ var Gamification = (function () {
             currentStreak: 0,
             longestStreak: 0,
             lastActivityDate: null,
-            streakFreezes: 1,          // 1 free freeze per month
-            lastFreezeMonth: null,
             correctPredictions: 0,
             investigateCount: 0,
             modifyCount: 0,
@@ -105,6 +103,22 @@ var Gamification = (function () {
             y8Complete: false,
             y9Complete: false,
             gcseComplete: false,
+            dailyChallengeStreak: 0,
+            longestChallengeStreak: 0,
+            lastChallengeDate: "",
+            dailyChallengesCompleted: 0,
+            sessionExerciseCount: 0,
+            sessionStartTime: null,
+            consecutiveCorrectPredictions: 0,
+            weeklyMissions: [],
+            weeklyMissionsGeneratedDate: "",
+            weeklyChestsEarned: 0,
+            streakRecoveryAvailable: true,
+            streakRecoveryMonth: "",
+            streakBrokenValue: 0,
+            streakRecoveryExpiry: "",
+            activityHistory: [],
+            selectedPerks: {}
         };
     }
 
@@ -511,6 +525,53 @@ var Gamification = (function () {
     }
 
     /* ═══════════════════════════════════════════
+       DAILY CHALLENGE
+       ═══════════════════════════════════════════ */
+
+    function getTodaysChallenge() {
+      if (typeof DAILY_CHALLENGES === "undefined" || !DAILY_CHALLENGES.length) {
+        return null;
+      }
+      var now = new Date();
+      var start = new Date(now.getFullYear(), 0, 0);
+      var diff = now - start;
+      var oneDay = 1000 * 60 * 60 * 24;
+      var dayOfYear = Math.floor(diff / oneDay);
+      var index = dayOfYear % DAILY_CHALLENGES.length;
+      return DAILY_CHALLENGES[index];
+    }
+
+    function isDailyChallengeComplete() {
+      var data = _load();
+      return data.lastChallengeDate === _today();
+    }
+
+    function completeDailyChallenge() {
+      var data = _load();
+      if (data.lastChallengeDate === _today()) {
+        return { xpGained: 0, alreadyDone: true };
+      }
+
+      var yesterday = _yesterday();
+      if (data.lastChallengeDate === yesterday) {
+        data.dailyChallengeStreak = data.dailyChallengeStreak + 1;
+      } else {
+        data.dailyChallengeStreak = 1;
+      }
+
+      if (data.dailyChallengeStreak > data.longestChallengeStreak) {
+        data.longestChallengeStreak = data.dailyChallengeStreak;
+      }
+
+      data.lastChallengeDate = _today();
+      data.dailyChallengesCompleted = data.dailyChallengesCompleted + 1;
+      data.totalXP = data.totalXP + 15;
+
+      _save(data);
+      return { xpGained: 15, alreadyDone: false, challengeStreak: data.dailyChallengeStreak };
+    }
+
+    /* ═══════════════════════════════════════════
        EXPORT
        ═══════════════════════════════════════════ */
 
@@ -526,6 +587,9 @@ var Gamification = (function () {
         countForYear: countForYear,
         countForTopic: countForTopic,
         resetAll: resetAll,
+        getTodaysChallenge: getTodaysChallenge,
+        isDailyChallengeComplete: isDailyChallengeComplete,
+        completeDailyChallenge: completeDailyChallenge,
         BADGES: BADGES,
         LEVELS: LEVELS,
         XP_REWARDS: XP_REWARDS
