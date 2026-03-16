@@ -47,30 +47,23 @@
 
         <!-- Login card -->
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-bold text-slate-900 mb-1">Join your class</h2>
-            <p class="text-sm text-slate-500 mb-5">Enter your name and the class code your teacher gave you.</p>
+            <h2 class="text-lg font-bold text-slate-900 mb-1">Welcome back</h2>
+            <p class="text-sm text-slate-500 mb-5">Enter the student code your teacher gave you.</p>
 
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label for="nickname" class="block text-sm font-medium text-slate-700 mb-1">Your name</label>
-                    <input id="nickname" type="text" maxlength="20" required autocomplete="off"
-                        placeholder="e.g. Alex"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none transition-all">
-                </div>
-
-                <div>
-                    <label for="class-code" class="block text-sm font-medium text-slate-700 mb-1">Class code</label>
-                    <input id="class-code" type="text" maxlength="10" required autocomplete="off"
-                        placeholder="e.g. 7A-CS"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-mono uppercase focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none transition-all">
-                    <p class="text-xs text-slate-400 mt-1">Ask your teacher for this code.</p>
+                    <label for="student-code" class="block text-sm font-medium text-slate-700 mb-1">Your student code</label>
+                    <input id="student-code" type="text" maxlength="20" required autocomplete="off"
+                        placeholder="e.g. 7A-CS-X4K2"
+                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-base font-mono uppercase text-center tracking-wider focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none transition-all">
+                    <p class="text-xs text-slate-400 mt-1">Ask your teacher if you don't have a code.</p>
                 </div>
 
                 <div id="error-msg" class="hidden text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2"></div>
 
-                <button type="submit"
-                    class="w-full rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition-all hover:from-brand-700 hover:to-brand-800 active:scale-[0.98]">
-                    Start Learning
+                <button type="submit" id="login-btn"
+                    class="w-full rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition-all hover:from-brand-700 hover:to-brand-800 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
+                    Log In
                 </button>
             </form>
         </div>
@@ -100,38 +93,44 @@
 
         var form = document.getElementById("login-form");
         var errorMsg = document.getElementById("error-msg");
+        var loginBtn = document.getElementById("login-btn");
 
         form.addEventListener("submit", function (e) {
             e.preventDefault();
             errorMsg.classList.add("hidden");
 
-            var nickname = document.getElementById("nickname").value.trim();
-            var classCode = document.getElementById("class-code").value.trim();
+            var code = document.getElementById("student-code").value.trim();
 
-            if (!nickname) {
-                errorMsg.textContent = "Please enter your name.";
+            if (!code) {
+                errorMsg.textContent = "Please enter your student code.";
                 errorMsg.classList.remove("hidden");
                 return;
             }
-            if (!classCode) {
-                errorMsg.textContent = "Please enter your class code.";
-                errorMsg.classList.remove("hidden");
-                return;
-            }
-            if (classCode.length < 2) {
-                errorMsg.textContent = "That class code looks too short. Check with your teacher.";
+            if (code.length < 4) {
+                errorMsg.textContent = "That code looks too short. Check with your teacher.";
                 errorMsg.classList.remove("hidden");
                 return;
             }
 
-            // Log in
-            var success = FirebaseSync.login(nickname, classCode);
-            if (success) {
-                window.location.href = "index.html";
-            } else {
+            // Disable button while loading
+            loginBtn.disabled = true;
+            loginBtn.textContent = "Logging in...";
+
+            FirebaseSync.loginWithCode(code).then(function (student) {
+                if (student) {
+                    window.location.href = "index.html";
+                } else {
+                    errorMsg.textContent = "Code not found. Check with your teacher.";
+                    errorMsg.classList.remove("hidden");
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = "Log In";
+                }
+            }).catch(function () {
                 errorMsg.textContent = "Something went wrong. Please try again.";
                 errorMsg.classList.remove("hidden");
-            }
+                loginBtn.disabled = false;
+                loginBtn.textContent = "Log In";
+            });
         });
     })();
     </script>
