@@ -346,6 +346,22 @@
               </div>
             </div>
 
+            <!-- Weekly Missions -->
+            <div id="weekly-missions-section" class="max-w-2xl mx-auto mb-8 hidden">
+              <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">📋</span>
+                    <h2 class="text-lg font-bold text-gray-800">This Week's Missions</h2>
+                  </div>
+                  <div id="weekly-chest-badge" class="hidden">
+                    <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-1 rounded-full">🎁 Weekly Chest!</span>
+                  </div>
+                </div>
+                <div id="weekly-missions-list" class="space-y-3"></div>
+              </div>
+            </div>
+
             <!-- Year group cards -->
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <!-- Year 7 -->
@@ -928,6 +944,7 @@
                 Progress.renderLandingBars();
             }
             renderDailyChallenge();
+            renderWeeklyMissions();
         }
 
         function renderDailyChallenge() {
@@ -956,6 +973,45 @@
           if (Gamification.isDailyChallengeComplete()) {
             document.getElementById("daily-challenge-link").classList.add("hidden");
             document.getElementById("daily-challenge-done").classList.remove("hidden");
+          }
+        }
+
+        function renderWeeklyMissions() {
+          var result = Gamification.getWeeklyMissions();
+          var section = document.getElementById("weekly-missions-section");
+          if (!section || !result.missions || result.missions.length === 0) return;
+
+          section.classList.remove("hidden");
+          var list = document.getElementById("weekly-missions-list");
+          list.innerHTML = "";
+
+          var icons = { xp: "\u2B50", exercise_count: "\uD83D\uDCDD", type_specific: "\uD83D\uDD2C", streak: "\uD83D\uDD25", topic: "\uD83D\uDCDA", daily_challenge: "\uD83C\uDFAF" };
+
+          for (var i = 0; i < result.missions.length; i++) {
+            var m = result.missions[i];
+            var pct = Math.min(Math.round((m.progress / m.target) * 100), 100);
+            var done = m.progress >= m.target;
+            var icon = icons[m.type] || "\uD83D\uDCCB";
+
+            var row = document.createElement("div");
+            row.className = "flex items-center gap-3";
+            row.innerHTML =
+              '<span class="text-lg w-8 text-center">' + (done ? "\u2705" : icon) + '</span>' +
+              '<div class="flex-1">' +
+                '<div class="flex justify-between items-center mb-1">' +
+                  '<span class="text-sm font-medium text-gray-700">' + m.label + '</span>' +
+                  '<span class="text-xs text-gray-500">' + Math.min(m.progress, m.target) + '/' + m.target + '</span>' +
+                '</div>' +
+                '<div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">' +
+                  '<div class="h-full rounded-full transition-all ' + (done ? 'bg-green-500' : 'bg-blue-500') + '" style="width: ' + pct + '%"></div>' +
+                '</div>' +
+              '</div>';
+            list.appendChild(row);
+          }
+
+          // Show chest badge if all complete
+          if (result.allComplete) {
+            document.getElementById("weekly-chest-badge").classList.remove("hidden");
           }
         }
 
