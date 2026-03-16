@@ -962,6 +962,7 @@ var FirebaseSync = (function () {
         sendMagicLink: sendMagicLink,
         completeMagicLinkSignIn: completeMagicLinkSignIn,
         getStudent: getStudent,
+        saveStudent: saveStudent,
         isLoggedIn: isLoggedIn,
         login: login,
         logout: logout,
