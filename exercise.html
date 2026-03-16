@@ -799,6 +799,7 @@ sys.stderr = io.StringIO()
         // Record visit (daily login XP + streak update)
         var visitResult = Gamification.recordVisit();
         Gamification.startExerciseTimer();
+        if (Gamification.applyPerks) Gamification.applyPerks();
         _updateHeaderXP();
 
         // Show streak toast if streak > 1

@@ -311,7 +311,7 @@ var Gamification = (function () {
         var newBadges = [];
         for (var i = 0; i < BADGES.length; i++) {
             var badge = BADGES[i];
-            if (!data.earnedBadges[badge.id] && badge.check(data)) {
+            if (!data.earnedBadges[badge.id] && typeof badge.check === "function" && badge.check(data)) {
                 data.earnedBadges[badge.id] = Date.now();
                 newBadges.push(badge);
             }

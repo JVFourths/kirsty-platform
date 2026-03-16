@@ -87,6 +87,12 @@
     <script src="js/firebase-sync.js"></script>
     <script>
     (function () {
+        // Record visit and apply perks
+        if (typeof Gamification !== "undefined") {
+            Gamification.recordVisit();
+            if (Gamification.applyPerks) Gamification.applyPerks();
+        }
+
         // Get year from query string
         var params = new URLSearchParams(window.location.search);
         var yearKey = params.get("year") || "7";
