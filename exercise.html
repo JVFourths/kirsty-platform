@@ -743,7 +743,8 @@ sys.stderr = io.StringIO()
             // Gamification: award XP, check badges, trigger animations
             var result = Gamification.completeExercise(exercise.id, exercise.type, {
                 firstTry: attemptCount <= 1,
-                predictionCorrect: opts.predictionCorrect || false
+                predictionCorrect: opts.predictionCorrect || false,
+                doubleXP: window._doubleXPActive || false
             });
 
             // Trigger celebration animations
@@ -805,6 +806,16 @@ sys.stderr = io.StringIO()
                 }, 1000);
             }
         }
+
+        // Check Double XP status
+        function checkDoubleXP() {
+          var student = FirebaseSync.getStudent();
+          if (!student || !student.classCode) return;
+          FirebaseSync.getDoubleXPStatus(student.classCode).then(function(active) {
+            window._doubleXPActive = active;
+          });
+        }
+        checkDoubleXP();
 
     })();
     </script>

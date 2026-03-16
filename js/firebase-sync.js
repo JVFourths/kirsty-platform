@@ -537,6 +537,32 @@ var FirebaseSync = (function () {
             });
     }
 
+    /* ── Double XP ── */
+    function setDoubleXP(classCode, enabled, durationMinutes) {
+      if (!_enabled || !db) return Promise.resolve();
+      var update = { doubleXP: enabled };
+      if (enabled && durationMinutes) {
+        update.doubleXPExpiry = new Date(Date.now() + durationMinutes * 60 * 1000).toISOString();
+      } else {
+        update.doubleXPExpiry = null;
+      }
+      return db.collection("classes").doc(classCode).update(update);
+    }
+
+    function getDoubleXPStatus(classCode) {
+      if (!_enabled || !db) return Promise.resolve(false);
+      return db.collection("classes").doc(classCode).get().then(function(doc) {
+        if (!doc.exists) return false;
+        var data = doc.data();
+        if (!data.doubleXP) return false;
+        if (data.doubleXPExpiry) {
+          var expiry = new Date(data.doubleXPExpiry);
+          if (Date.now() > expiry.getTime()) return false;
+        }
+        return true;
+      });
+    }
+
     /* ── Export ── */
     return {
         init: init,
@@ -557,6 +583,8 @@ var FirebaseSync = (function () {
         saveAssignment: saveAssignment,
         deleteAssignment: deleteAssignment,
         getAssignments: getAssignments,
+        setDoubleXP: setDoubleXP,
+        getDoubleXPStatus: getDoubleXPStatus,
         get enabled() { return _enabled; },
         get currentUser() { return _currentUser; },
         get db() { return db; }

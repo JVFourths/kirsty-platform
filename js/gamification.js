@@ -417,6 +417,11 @@ var Gamification = (function () {
             xp += bonusXP;
         }
 
+        // Double XP multiplier (teacher-controlled)
+        if (opts && opts.doubleXP) {
+            xp = xp * 2;
+        }
+
         data.totalXP += xp;
         data.weeklyXP += xp;
         data.totalExercises += 1;

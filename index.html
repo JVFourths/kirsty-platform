@@ -322,6 +322,13 @@
                 </p>
             </div>
 
+            <!-- Double XP Banner -->
+            <div id="double-xp-banner" class="hidden max-w-2xl mx-auto mb-4">
+              <div class="bg-gradient-to-r from-amber-400 to-yellow-400 text-white font-bold text-center py-3 rounded-xl shadow-sm text-lg">
+                ⚡ Double XP Active! ⚡
+              </div>
+            </div>
+
             <!-- Daily Challenge -->
             <div id="daily-challenge-section" class="max-w-2xl mx-auto mb-8 hidden">
               <div id="daily-challenge-card" class="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-6 shadow-sm">
@@ -945,6 +952,7 @@
             }
             renderDailyChallenge();
             renderWeeklyMissions();
+            checkDoubleXP();
         }
 
         function renderDailyChallenge() {
@@ -974,6 +982,22 @@
             document.getElementById("daily-challenge-link").classList.add("hidden");
             document.getElementById("daily-challenge-done").classList.remove("hidden");
           }
+        }
+
+        function checkDoubleXP() {
+          var student = FirebaseSync.getStudent();
+          if (!student || !student.classCode) return;
+          FirebaseSync.getDoubleXPStatus(student.classCode).then(function(active) {
+            var banner = document.getElementById("double-xp-banner");
+            if (banner) {
+              if (active) {
+                banner.classList.remove("hidden");
+              } else {
+                banner.classList.add("hidden");
+              }
+            }
+            window._doubleXPActive = active;
+          });
         }
 
         function renderWeeklyMissions() {

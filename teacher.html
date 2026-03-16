@@ -161,6 +161,26 @@
                 </div>
             </div>
 
+            <!-- Double XP Toggle -->
+            <div id="double-xp-section" class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl mb-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-gray-800">⚡ Double XP</h4>
+                  <p class="text-sm text-gray-600">All students earn double XP</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <select id="double-xp-duration" class="text-sm border rounded px-2 py-1">
+                    <option value="60">1 hour</option>
+                    <option value="45">Rest of lesson (45m)</option>
+                    <option value="0">Until I turn it off</option>
+                  </select>
+                  <button id="double-xp-toggle" onclick="toggleDoubleXP()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition">
+                    Enable
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Struggling students alert -->
             <div id="struggling-alert" class="hidden mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
                 <div class="flex items-center gap-2 text-sm font-semibold text-red-700 mb-1">
@@ -327,6 +347,22 @@
     <script src="js/firebase-sync.js"></script>
 
     <script>
+    function toggleDoubleXP() {
+      var btn = document.getElementById("double-xp-toggle");
+      var select = document.getElementById("double-xp-duration");
+      var classCode = document.getElementById("class-select").value;
+      if (!classCode) return;
+
+      var isEnabled = btn.textContent.trim() === "Disable";
+      var duration = isEnabled ? 0 : parseInt(select.value);
+      FirebaseSync.setDoubleXP(classCode, !isEnabled, duration || null).then(function() {
+        btn.textContent = isEnabled ? "Enable" : "Disable";
+        btn.className = isEnabled
+          ? "px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition"
+          : "px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition";
+      });
+    }
+
     (function () {
         /* ═══════════════════════════════════════════
            STATE
