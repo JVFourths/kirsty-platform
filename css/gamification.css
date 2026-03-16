@@ -317,3 +317,21 @@
     color: #94a3b8;
     margin-top: 0.125rem;
 }
+
+/* Lucky XP bonus animation */
+.lucky-xp {
+  color: #f59e0b;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.lucky-xp.xp-popup-animate {
+  animation: lucky-fade 2s ease-out forwards;
+}
+
+@keyframes lucky-fade {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  30% { transform: translateY(-20px) scale(1.3); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+}

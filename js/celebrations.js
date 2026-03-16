@@ -120,6 +120,26 @@ var Celebrations = (function () {
         }, 2500);
     }
 
+    /* ── Lucky XP Bonus Animation ── */
+    function showLuckyXP(xp, targetEl) {
+      var popup = document.createElement("div");
+      popup.className = "xp-popup lucky-xp";
+      popup.innerHTML = "\u2728 Lucky +" + xp + " XP! \u2728";
+
+      var rect = targetEl.getBoundingClientRect();
+      popup.style.left = rect.left + rect.width / 2 + "px";
+      popup.style.top = rect.top + "px";
+      document.body.appendChild(popup);
+
+      requestAnimationFrame(function() {
+        popup.classList.add("xp-popup-animate");
+      });
+
+      setTimeout(function() {
+        if (popup.parentNode) popup.parentNode.removeChild(popup);
+      }, 2000);
+    }
+
     /* ── Process all rewards from a completion event ── */
     function celebrate(result, targetEl) {
         // XP popup
@@ -141,6 +161,13 @@ var Celebrations = (function () {
             }
         }
 
+        // Lucky XP bonus animation
+        if (result.bonusXP && result.bonusXP > 0) {
+            setTimeout(function() {
+                showLuckyXP(result.bonusXP, targetEl);
+            }, 500);
+        }
+
         // Confetti for first-try or special moments
         if (result.xpGained >= 20) {
             setTimeout(confetti, 300);
@@ -153,6 +180,7 @@ var Celebrations = (function () {
         showLevelUp: showLevelUp,
         showBadge: showBadge,
         showStreak: showStreak,
+        showLuckyXP: showLuckyXP,
         celebrate: celebrate
     };
 
