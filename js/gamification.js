@@ -84,7 +84,10 @@ var Gamification = (function () {
         // Weekly Champion badges
         { id: "weekly-champion-bronze", title: "Weekly Champion", desc: "Earned your first Weekly Chest", icon: "🥉", check: function(d) { return d.weeklyChestsEarned >= 1; } },
         { id: "weekly-champion-silver", title: "Weekly Champion II", desc: "Earned 3 Weekly Chests", icon: "🥈", check: function(d) { return d.weeklyChestsEarned >= 3; } },
-        { id: "weekly-champion-gold", title: "Weekly Champion III", desc: "Earned 5 Weekly Chests", icon: "🥇", check: function(d) { return d.weeklyChestsEarned >= 5; } }
+        { id: "weekly-champion-gold", title: "Weekly Champion III", desc: "Earned 5 Weekly Chests", icon: "🥇", check: function(d) { return d.weeklyChestsEarned >= 5; } },
+
+        // Class goal
+        { id: "team-player", title: "Team Player", desc: "Class goal completed together!", icon: "🤝" }
     ];
 
     /* ═══════════════════════════════════════════
@@ -734,6 +737,15 @@ var Gamification = (function () {
       return newBadges;
     }
 
+    function awardBadge(badgeId) {
+      var data = _load();
+      if (data.earnedBadges[badgeId]) return null; // Already earned
+      data.earnedBadges[badgeId] = Date.now();
+      data.totalXP = data.totalXP + 25; // Bonus XP for Team Player
+      _save(data);
+      return _findBadge(badgeId);
+    }
+
     function _findBadge(id) {
       for (var i = 0; i < BADGES.length; i++) {
         if (BADGES[i].id === id) return BADGES[i];
@@ -1130,6 +1142,7 @@ var Gamification = (function () {
         selectPerk: selectPerk,
         getSelectedPerks: getSelectedPerks,
         applyPerks: applyPerks,
+        awardBadge: awardBadge,
         BADGES: BADGES,
         LEVELS: LEVELS,
         XP_REWARDS: XP_REWARDS

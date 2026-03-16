@@ -1210,6 +1210,15 @@
             // Check if goal just completed
             if (current >= goal.target) {
               document.getElementById("class-goal-title").textContent += " — Completed! 🎉";
+              // Award Team Player badge + bonus XP (once)
+              var badge = Gamification.awardBadge("team-player");
+              if (badge) {
+                // Only celebrate on first time seeing the completion
+                if (typeof Celebrations !== "undefined") {
+                  Celebrations.confetti();
+                  Celebrations.showBadge(badge);
+                }
+              }
             }
           });
         }
