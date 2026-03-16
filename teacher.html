@@ -194,6 +194,71 @@
               </div>
             </div>
 
+            <!-- Class Social Settings -->
+            <div id="class-settings-section" class="mt-6 space-y-4">
+              <h3 class="text-lg font-bold text-gray-800">Class Settings</h3>
+
+              <!-- Feed Toggle -->
+              <div class="p-4 bg-white border rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-gray-800">📣 Class Activity Feed</h4>
+                  <p class="text-sm text-gray-600">Students see classmates' achievements</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="feed-toggle" onchange="updateClassSetting('feedEnabled', this.checked)" class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                </label>
+              </div>
+
+              <!-- Leaderboard Toggle -->
+              <div class="p-4 bg-white border rounded-xl">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h4 class="font-semibold text-gray-800">🏆 Weekly Leaderboard</h4>
+                    <p class="text-sm text-gray-600">Top 5 students by weekly XP</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="leaderboard-toggle" onchange="updateClassSetting('leaderboardEnabled', this.checked)" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                  </label>
+                </div>
+                <div id="leaderboard-anon-option" class="mt-3 hidden">
+                  <label class="flex items-center gap-2 text-sm text-gray-600">
+                    <input type="checkbox" id="leaderboard-anon" onchange="updateClassSetting('leaderboardAnonymous', this.checked)">
+                    Anonymous mode (hide student names)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Class Goal -->
+              <div class="p-4 bg-white border rounded-xl">
+                <h4 class="font-semibold text-gray-800 mb-3">🎯 Class Goal</h4>
+                <div id="current-goal-display" class="hidden mb-4 p-3 bg-blue-50 rounded-lg">
+                  <p id="current-goal-text" class="font-medium text-gray-700"></p>
+                  <div class="h-2 bg-blue-100 rounded-full mt-2 overflow-hidden">
+                    <div id="current-goal-bar" class="h-full bg-blue-500 rounded-full" style="width: 0%"></div>
+                  </div>
+                  <div class="flex justify-between mt-1">
+                    <span id="current-goal-progress-text" class="text-xs text-gray-500"></span>
+                    <button onclick="clearGoal()" class="text-xs text-red-500 hover:underline">Clear Goal</button>
+                  </div>
+                </div>
+                <div id="goal-form">
+                  <div class="flex gap-2 mb-2">
+                    <select id="goal-metric" class="flex-1 border rounded px-3 py-2 text-sm">
+                      <option value="exercises_completed">Exercises completed</option>
+                      <option value="xp_earned">XP earned</option>
+                    </select>
+                    <input type="number" id="goal-target" placeholder="Target" class="w-24 border rounded px-3 py-2 text-sm">
+                  </div>
+                  <div class="flex gap-2">
+                    <input type="date" id="goal-deadline" class="flex-1 border rounded px-3 py-2 text-sm">
+                    <button onclick="setGoal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Set Goal</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Struggling students alert -->
             <div id="struggling-alert" class="hidden mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
                 <div class="flex items-center gap-2 text-sm font-semibold text-red-700 mb-1">
@@ -376,6 +441,76 @@
       });
     }
 
+    function updateClassSetting(key, value) {
+      var classCode = document.getElementById("class-select").value;
+      if (!classCode) return;
+      var update = {};
+      update[key] = value;
+      FirebaseSync.updateClassSettings(classCode, update).then(function() {
+        // Show/hide anonymous option when leaderboard toggled
+        if (key === "leaderboardEnabled") {
+          var anonOption = document.getElementById("leaderboard-anon-option");
+          if (anonOption) {
+            anonOption.classList.toggle("hidden", !value);
+          }
+        }
+      });
+    }
+
+    function loadClassSettings() {
+      var classCode = document.getElementById("class-select").value;
+      if (!classCode) return;
+      FirebaseSync.getClassSettings(classCode).then(function(settings) {
+        document.getElementById("feed-toggle").checked = settings.feedEnabled || false;
+        document.getElementById("leaderboard-toggle").checked = settings.leaderboardEnabled || false;
+        document.getElementById("leaderboard-anon").checked = settings.leaderboardAnonymous || false;
+        var anonOption = document.getElementById("leaderboard-anon-option");
+        if (anonOption) {
+          anonOption.classList.toggle("hidden", !settings.leaderboardEnabled);
+        }
+      });
+
+      // Load current goal
+      FirebaseSync.getClassGoal(classCode).then(function(goal) {
+        var display = document.getElementById("current-goal-display");
+        if (!display) return;
+        if (goal) {
+          display.classList.remove("hidden");
+          document.getElementById("goal-form").classList.add("hidden");
+          var labels = { exercises_completed: "exercises", xp_earned: "XP" };
+          document.getElementById("current-goal-text").textContent =
+            "Goal: " + goal.target + " " + (labels[goal.metric] || goal.metric);
+          var pct = Math.round(((goal.current || 0) / goal.target) * 100);
+          document.getElementById("current-goal-bar").style.width = Math.min(pct, 100) + "%";
+          document.getElementById("current-goal-progress-text").textContent =
+            (goal.current || 0) + " / " + goal.target;
+        } else {
+          display.classList.add("hidden");
+          document.getElementById("goal-form").classList.remove("hidden");
+        }
+      });
+    }
+
+    function setGoal() {
+      var classCode = document.getElementById("class-select").value;
+      var metric = document.getElementById("goal-metric").value;
+      var target = parseInt(document.getElementById("goal-target").value);
+      var deadline = document.getElementById("goal-deadline").value;
+      if (!classCode || !target) return;
+
+      FirebaseSync.setClassGoal(classCode, { metric: metric, target: target, deadline: deadline || null }).then(function() {
+        loadClassSettings();
+      });
+    }
+
+    function clearGoal() {
+      var classCode = document.getElementById("class-select").value;
+      if (!classCode) return;
+      FirebaseSync.clearClassGoal(classCode).then(function() {
+        loadClassSettings();
+      });
+    }
+
     function toggleTopicOverride() {
       var btn = document.getElementById("unlock-override-btn");
       var classCode = document.getElementById("class-select").value;
@@ -496,7 +631,10 @@
         });
 
         classSelect.addEventListener("change", function () {
-            if (classSelect.value) loadClass(classSelect.value);
+            if (classSelect.value) {
+                loadClass(classSelect.value);
+                loadClassSettings();
+            }
         });
 
         document.getElementById("refresh-btn").addEventListener("click", function () {
