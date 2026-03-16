@@ -501,6 +501,63 @@ var Gamification = (function () {
 
         _save(data);
 
+        // Write feed entries and increment class goal
+        var student = null;
+        if (typeof FirebaseSync !== "undefined") {
+          student = FirebaseSync.getStudent();
+        }
+        if (student && student.classCode) {
+          // Write feed entries for milestones
+          for (var fb = 0; fb < newBadges.length; fb++) {
+            FirebaseSync.writeFeedEntry(student.classCode, {
+              type: "badge",
+              studentNickname: student.nickname || "A student",
+              detail: newBadges[fb].title
+            });
+          }
+          if (newLevel) {
+            FirebaseSync.writeFeedEntry(student.classCode, {
+              type: "level",
+              studentNickname: student.nickname || "A student",
+              detail: "Level " + newLevel.level
+            });
+          }
+
+          // Check if a topic was just completed and write feed entry
+          if (typeof EXERCISES !== "undefined") {
+            var years = ["7", "8", "9", "gcse"];
+            for (var fy = 0; fy < years.length; fy++) {
+              var fyData = EXERCISES[years[fy]];
+              if (!fyData) continue;
+              for (var ft = 0; ft < fyData.topics.length; ft++) {
+                var fTopic = fyData.topics[ft];
+                var allDone = true;
+                for (var fe = 0; fe < fTopic.exercises.length; fe++) {
+                  if (!data.completedExercises[fTopic.exercises[fe].id]) { allDone = false; break; }
+                }
+                // Check if this exercise was the one that completed the topic
+                if (allDone && fTopic.exercises.length > 0) {
+                  var wasJustCompleted = false;
+                  for (var fex = 0; fex < fTopic.exercises.length; fex++) {
+                    if (fTopic.exercises[fex].id === exerciseId) { wasJustCompleted = true; break; }
+                  }
+                  if (wasJustCompleted) {
+                    FirebaseSync.writeFeedEntry(student.classCode, {
+                      type: "topic",
+                      studentNickname: student.nickname || "A student",
+                      detail: fTopic.title
+                    });
+                  }
+                }
+              }
+            }
+          }
+
+          // Increment class goal if active
+          FirebaseSync.incrementClassGoal(student.classCode, "exercises_completed", 1);
+          FirebaseSync.incrementClassGoal(student.classCode, "xp_earned", xp);
+        }
+
         return {
             xpGained: xp,
             bonusXP: bonusXP,
