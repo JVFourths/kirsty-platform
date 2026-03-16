@@ -181,6 +181,19 @@
               </div>
             </div>
 
+            <!-- Topic Unlock Override -->
+            <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl mb-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-gray-800">🔓 Topic Unlock Override</h4>
+                  <p class="text-sm text-gray-600">Unlock all topics for the entire class</p>
+                </div>
+                <button id="unlock-override-btn" onclick="toggleTopicOverride()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition">
+                  Unlock All
+                </button>
+              </div>
+            </div>
+
             <!-- Struggling students alert -->
             <div id="struggling-alert" class="hidden mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
                 <div class="flex items-center gap-2 text-sm font-semibold text-red-700 mb-1">
@@ -359,6 +372,21 @@
         btn.textContent = isEnabled ? "Enable" : "Disable";
         btn.className = isEnabled
           ? "px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition"
+          : "px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition";
+      });
+    }
+
+    function toggleTopicOverride() {
+      var btn = document.getElementById("unlock-override-btn");
+      var classCode = document.getElementById("class-select").value;
+      if (!classCode) return;
+
+      var isUnlocked = btn.textContent.trim() === "Lock Topics";
+      var override = isUnlocked ? null : "all";
+      FirebaseSync.setTopicUnlockOverride(classCode, override).then(function() {
+        btn.textContent = isUnlocked ? "Unlock All" : "Lock Topics";
+        btn.className = isUnlocked
+          ? "px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition"
           : "px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition";
       });
     }

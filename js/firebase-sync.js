@@ -563,6 +563,17 @@ var FirebaseSync = (function () {
       });
     }
 
+    /* ── Topic Unlock Override ── */
+    function setTopicUnlockOverride(classCode, override) {
+        if (!_enabled || !db) return Promise.resolve();
+        return db.collection("classes").doc(classCode).update({ topicUnlockOverride: override });
+    }
+
+    function setStudentTopicUnlockOverride(studentId, override) {
+        if (!_enabled || !db) return Promise.resolve();
+        return db.collection("students").doc(studentId).update({ topicUnlockOverride: override });
+    }
+
     /* ── Export ── */
     return {
         init: init,
@@ -585,6 +596,8 @@ var FirebaseSync = (function () {
         getAssignments: getAssignments,
         setDoubleXP: setDoubleXP,
         getDoubleXPStatus: getDoubleXPStatus,
+        setTopicUnlockOverride: setTopicUnlockOverride,
+        setStudentTopicUnlockOverride: setStudentTopicUnlockOverride,
         get enabled() { return _enabled; },
         get currentUser() { return _currentUser; },
         get db() { return db; }
