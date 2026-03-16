@@ -73,6 +73,13 @@ var Gamification = (function () {
         { id: "y8-complete",   title: "Year 8 Champion",   desc: "Finish all Year 8 exercises",          icon: "🥈",  check: function(d){ return d.y8Complete; } },
         { id: "y9-complete",   title: "Year 9 Champion",   desc: "Finish all Year 9 exercises",          icon: "🥉",  check: function(d){ return d.y9Complete; } },
         { id: "gcse-complete", title: "GCSE Legend",        desc: "Finish all GCSE exercises",            icon: "🏆",  check: function(d){ return d.gcseComplete; } },
+
+        // Mystery badges (hidden until earned)
+        { id: "night-owl", title: "Night Owl", desc: "Complete an exercise after 6pm", icon: "🦉", hidden: true, check: function() { return false; } },
+        { id: "early-bird", title: "Early Bird", desc: "Complete an exercise before 8am", icon: "🐦", hidden: true, check: function() { return false; } },
+        { id: "speed-demon", title: "Speed Demon", desc: "Complete 5 exercises in one session", icon: "⚡", hidden: true, check: function() { return false; } },
+        { id: "perfectionist", title: "Perfectionist", desc: "10 correct predictions in a row", icon: "💎", hidden: true, check: function() { return false; } },
+        { id: "marathon-runner", title: "Marathon Runner", desc: "Spend 60+ minutes in one session", icon: "🏃", hidden: true, check: function() { return false; } }
     ];
 
     /* ═══════════════════════════════════════════
@@ -421,6 +428,23 @@ var Gamification = (function () {
         // Check badges
         var newBadges = _checkBadges(data);
 
+        // Session tracking and mystery badges
+        data = _updateSession(data);
+
+        // Track prediction accuracy for Perfectionist badge
+        if (exerciseType === "predict") {
+          if (opts && opts.predictionCorrect) {
+            data.consecutiveCorrectPredictions = data.consecutiveCorrectPredictions + 1;
+          } else {
+            data.consecutiveCorrectPredictions = 0;
+          }
+        }
+
+        var mysteryBadges = _checkMysteryBadges(data);
+        for (var m = 0; m < mysteryBadges.length; m++) {
+          newBadges.push(mysteryBadges[m]);
+        }
+
         var newLevelData = getLevel(data.totalXP);
         var leveledUp = newLevelData.level > oldLevel;
 
@@ -459,11 +483,23 @@ var Gamification = (function () {
             level: level,
             currentStreak: data.currentStreak,
             longestStreak: data.longestStreak,
-            streakFreezes: data.streakFreezes,
             totalExercises: data.totalExercises,
+            dailyChallengeStreak: data.dailyChallengeStreak,
+            longestChallengeStreak: data.longestChallengeStreak,
+            dailyChallengesCompleted: data.dailyChallengesCompleted,
             earnedBadges: data.earnedBadges,
             completedExercises: data.completedExercises,
-            allBadges: BADGES,
+            allBadges: (function() {
+                var filtered = [];
+                for (var i = 0; i < BADGES.length; i++) {
+                    var b = BADGES[i];
+                    if (b.hidden && !data.earnedBadges[b.id]) {
+                        continue; // Don't show unearned mystery badges
+                    }
+                    filtered.push(b);
+                }
+                return filtered;
+            })(),
             allLevels: LEVELS
         };
     }
@@ -522,6 +558,76 @@ var Gamification = (function () {
     /** Full reset (for testing). */
     function resetAll() {
         _save(_defaultData());
+    }
+
+    /* ═══════════════════════════════════════════
+       SESSION TRACKING & MYSTERY BADGES
+       ═══════════════════════════════════════════ */
+
+    function _updateSession(data) {
+      var now = Date.now();
+      // Reset session if > 2 hours since last activity
+      if (data.sessionStartTime && (now - data.sessionStartTime > 2 * 60 * 60 * 1000)) {
+        data.sessionExerciseCount = 0;
+        data.sessionStartTime = null;
+      }
+      // Start session on first exercise completion
+      if (!data.sessionStartTime) {
+        data.sessionStartTime = now;
+        data.sessionExerciseCount = 0;
+      }
+      data.sessionExerciseCount = data.sessionExerciseCount + 1;
+      return data;
+    }
+
+    function _checkMysteryBadges(data) {
+      var newBadges = [];
+      var hour = new Date().getHours();
+
+      // Night Owl: exercise after 6pm
+      if (hour >= 18 && !data.earnedBadges["night-owl"]) {
+        data.earnedBadges["night-owl"] = Date.now();
+        newBadges.push(_findBadge("night-owl"));
+      }
+
+      // Early Bird: exercise before 8am
+      if (hour < 8 && !data.earnedBadges["early-bird"]) {
+        data.earnedBadges["early-bird"] = Date.now();
+        newBadges.push(_findBadge("early-bird"));
+      }
+
+      // Speed Demon: 5 exercises in one session (within 30 min)
+      if (data.sessionExerciseCount >= 5 && !data.earnedBadges["speed-demon"]) {
+        var sessionDuration = Date.now() - data.sessionStartTime;
+        if (sessionDuration <= 30 * 60 * 1000) {
+          data.earnedBadges["speed-demon"] = Date.now();
+          newBadges.push(_findBadge("speed-demon"));
+        }
+      }
+
+      // Perfectionist: 10 correct predictions in a row
+      if (data.consecutiveCorrectPredictions >= 10 && !data.earnedBadges["perfectionist"]) {
+        data.earnedBadges["perfectionist"] = Date.now();
+        newBadges.push(_findBadge("perfectionist"));
+      }
+
+      // Marathon Runner: 60+ minutes in one session
+      if (data.sessionStartTime && !data.earnedBadges["marathon-runner"]) {
+        var duration = Date.now() - data.sessionStartTime;
+        if (duration >= 60 * 60 * 1000) {
+          data.earnedBadges["marathon-runner"] = Date.now();
+          newBadges.push(_findBadge("marathon-runner"));
+        }
+      }
+
+      return newBadges;
+    }
+
+    function _findBadge(id) {
+      for (var i = 0; i < BADGES.length; i++) {
+        if (BADGES[i].id === id) return BADGES[i];
+      }
+      return null;
     }
 
     /* ═══════════════════════════════════════════
