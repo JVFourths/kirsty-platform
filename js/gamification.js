@@ -79,7 +79,12 @@ var Gamification = (function () {
         { id: "early-bird", title: "Early Bird", desc: "Complete an exercise before 8am", icon: "🐦", hidden: true, check: function() { return false; } },
         { id: "speed-demon", title: "Speed Demon", desc: "Complete 5 exercises in one session", icon: "⚡", hidden: true, check: function() { return false; } },
         { id: "perfectionist", title: "Perfectionist", desc: "10 correct predictions in a row", icon: "💎", hidden: true, check: function() { return false; } },
-        { id: "marathon-runner", title: "Marathon Runner", desc: "Spend 60+ minutes in one session", icon: "🏃", hidden: true, check: function() { return false; } }
+        { id: "marathon-runner", title: "Marathon Runner", desc: "Spend 60+ minutes in one session", icon: "🏃", hidden: true, check: function() { return false; } },
+
+        // Weekly Champion badges
+        { id: "weekly-champion-bronze", title: "Weekly Champion", desc: "Earned your first Weekly Chest", icon: "🥉", check: function(d) { return d.weeklyChestsEarned >= 1; } },
+        { id: "weekly-champion-silver", title: "Weekly Champion II", desc: "Earned 3 Weekly Chests", icon: "🥈", check: function(d) { return d.weeklyChestsEarned >= 3; } },
+        { id: "weekly-champion-gold", title: "Weekly Champion III", desc: "Earned 5 Weekly Chests", icon: "🥇", check: function(d) { return d.weeklyChestsEarned >= 5; } }
     ];
 
     /* ═══════════════════════════════════════════
@@ -816,6 +821,17 @@ var Gamification = (function () {
       if (!wereAllComplete && _allMissionsComplete(data.weeklyMissions)) {
         data.weeklyChestsEarned = data.weeklyChestsEarned + 1;
         data.totalXP = data.totalXP + 50;
+
+        // Award Weekly Champion badges
+        if (data.weeklyChestsEarned >= 1 && !data.earnedBadges["weekly-champion-bronze"]) {
+          data.earnedBadges["weekly-champion-bronze"] = Date.now();
+        }
+        if (data.weeklyChestsEarned >= 3 && !data.earnedBadges["weekly-champion-silver"]) {
+          data.earnedBadges["weekly-champion-silver"] = Date.now();
+        }
+        if (data.weeklyChestsEarned >= 5 && !data.earnedBadges["weekly-champion-gold"]) {
+          data.earnedBadges["weekly-champion-gold"] = Date.now();
+        }
       }
     }
 
