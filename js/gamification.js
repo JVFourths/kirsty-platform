@@ -488,12 +488,23 @@ var Gamification = (function () {
         var newLevelData = getLevel(data.totalXP);
         var leveledUp = newLevelData.level > oldLevel;
 
+        // When leveling up, find the perk for that level
+        var newLevel = leveledUp ? newLevelData : false;
+        if (newLevel) {
+            for (var lp = 0; lp < LEVEL_PERKS.length; lp++) {
+                if (LEVEL_PERKS[lp].level === newLevel.level) {
+                    newLevel.perk = LEVEL_PERKS[lp].label;
+                    break;
+                }
+            }
+        }
+
         _save(data);
 
         return {
             xpGained: xp,
             bonusXP: bonusXP,
-            newLevel: leveledUp ? newLevelData : false,
+            newLevel: newLevel,
             newBadges: newBadges,
             totalXP: data.totalXP,
             level: newLevelData
@@ -964,6 +975,78 @@ var Gamification = (function () {
     }
 
     /* ═══════════════════════════════════════════
+       LEVEL PERKS
+       ═══════════════════════════════════════════ */
+
+    var LEVEL_PERKS = [
+        { level: 2, id: "profileBorder", label: "Profile Border Colour", options: ["blue", "green", "purple", "red", "gold"] },
+        { level: 3, id: "editorTheme", label: "Dark Editor Theme", options: ["dark"] },
+        { level: 4, id: "flameColour", label: "Custom Streak Flame", options: ["green", "blue", "pink", "gold"] },
+        { level: 5, id: "animatedBadge", label: "Animated Profile Badge", options: ["enabled"] },
+        { level: 6, id: "landingGradient", label: "Landing Page Theme", options: ["sunset", "ocean", "forest"] },
+        { level: 7, id: "editorFont", label: "Editor Font Choice", options: ["fira-code", "source-code-pro"] },
+        { level: 8, id: "proLabel", label: "Pro Label", options: ["enabled"] },
+        { level: 9, id: "confettiColours", label: "Confetti Colours", options: ["gold-purple", "blue-green", "red-orange"] },
+        { level: 10, id: "masterFrame", label: "Python Master Frame", options: ["enabled"] }
+    ];
+
+    function getLevelPerks() {
+        var data = _load();
+        var currentLevel = getLevel(data.totalXP).level;
+        var perks = [];
+        for (var i = 0; i < LEVEL_PERKS.length; i++) {
+            var p = LEVEL_PERKS[i];
+            perks.push({
+                level: p.level,
+                id: p.id,
+                label: p.label,
+                options: p.options,
+                unlocked: currentLevel >= p.level,
+                selected: data.selectedPerks[p.id] || null
+            });
+        }
+        return perks;
+    }
+
+    function selectPerk(perkId, value) {
+        var data = _load();
+        if (!data.selectedPerks) data.selectedPerks = {};
+        data.selectedPerks[perkId] = value;
+        _save(data);
+    }
+
+    function getSelectedPerks() {
+        var data = _load();
+        return data.selectedPerks || {};
+    }
+
+    function applyPerks() {
+        var perks = getSelectedPerks();
+
+        // Landing page gradient (Level 6)
+        if (perks.landingGradient) {
+            document.body.classList.add("perk-gradient-" + perks.landingGradient);
+        }
+
+        // Profile border (Level 2)
+        var profileCard = document.querySelector(".profile-card");
+        if (profileCard && perks.profileBorder) {
+            profileCard.classList.add("perk-border-" + perks.profileBorder);
+        }
+
+        // Flame colour (Level 4)
+        var flameIcon = document.getElementById("header-streak-icon");
+        if (flameIcon && perks.flameColour) {
+            flameIcon.classList.add("perk-flame-" + perks.flameColour);
+        }
+
+        // Master frame (Level 10)
+        if (profileCard && perks.masterFrame === "enabled") {
+            profileCard.classList.add("perk-master-frame");
+        }
+    }
+
+    /* ═══════════════════════════════════════════
        EXPORT
        ═══════════════════════════════════════════ */
 
@@ -986,6 +1069,10 @@ var Gamification = (function () {
         getStreakRecoveryStatus: getStreakRecoveryStatus,
         completeStreakRecovery: completeStreakRecovery,
         getFlameClass: getFlameClass,
+        getLevelPerks: getLevelPerks,
+        selectPerk: selectPerk,
+        getSelectedPerks: getSelectedPerks,
+        applyPerks: applyPerks,
         BADGES: BADGES,
         LEVELS: LEVELS,
         XP_REWARDS: XP_REWARDS

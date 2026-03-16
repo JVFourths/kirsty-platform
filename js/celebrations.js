@@ -69,6 +69,14 @@ var Celebrations = (function () {
             '</div>';
         document.body.appendChild(overlay);
 
+        // Show perk if unlocked at this level
+        if (levelData.perk) {
+            var perkEl = document.createElement("p");
+            perkEl.className = "level-up-perk";
+            perkEl.textContent = "Unlocked: " + levelData.perk;
+            overlay.querySelector(".level-up-modal").appendChild(perkEl);
+        }
+
         // Trigger entrance animation
         requestAnimationFrame(function () {
             overlay.classList.add("level-up-visible");

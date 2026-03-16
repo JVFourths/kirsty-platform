@@ -148,6 +148,12 @@
             </div>
         </div>
 
+        <!-- Customise Section -->
+        <div class="mt-8 mb-10">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">🎨 Customise</h3>
+          <div id="perk-list" class="space-y-3"></div>
+        </div>
+
         <!-- Level progression -->
         <div class="mb-10">
             <h2 class="text-lg font-bold text-slate-900 mb-4">Level Progression</h2>
@@ -268,6 +274,44 @@
         modal.addEventListener("click", function (e) {
             if (e.target === modal) modal.classList.add("hidden");
         });
+
+        // Render perks
+        renderPerks();
+        Gamification.applyPerks();
+
+        function renderPerks() {
+            var perks = Gamification.getLevelPerks();
+            var container = document.getElementById("perk-list");
+            if (!container) return;
+            container.innerHTML = "";
+
+            for (var i = 0; i < perks.length; i++) {
+                var p = perks[i];
+                var card = document.createElement("div");
+                card.className = "p-4 border rounded-xl " + (p.unlocked ? "bg-white" : "bg-gray-50 opacity-60");
+                var html = '<div class="flex items-center justify-between">' +
+                    '<div>' +
+                        '<span class="font-semibold text-gray-800">' + p.label + '</span>' +
+                        '<span class="text-xs text-gray-500 ml-2">Level ' + p.level + '</span>' +
+                    '</div>';
+
+                if (p.unlocked) {
+                    html += '<select class="text-sm border rounded px-2 py-1" onchange="Gamification.selectPerk(\'' + p.id + '\', this.value); Gamification.applyPerks()">';
+                    html += '<option value="">Default</option>';
+                    for (var o = 0; o < p.options.length; o++) {
+                        var sel = p.selected === p.options[o] ? " selected" : "";
+                        html += '<option value="' + p.options[o] + '"' + sel + '>' + p.options[o] + '</option>';
+                    }
+                    html += '</select>';
+                } else {
+                    html += '<span class="text-sm text-gray-400">\uD83D\uDD12 Locked</span>';
+                }
+
+                html += '</div>';
+                card.innerHTML = html;
+                container.appendChild(card);
+            }
+        }
 
         function renderStreakCalendar(profile) {
             var container = document.getElementById("streak-calendar");

@@ -967,6 +967,9 @@
             renderWeeklyMissions();
             checkDoubleXP();
             checkStreakRecovery();
+            if (typeof Gamification !== 'undefined' && Gamification.applyPerks) {
+                Gamification.applyPerks();
+            }
         }
 
         function renderDailyChallenge() {
