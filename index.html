@@ -88,6 +88,7 @@
     </style>
 </head>
 <body class="h-full bg-slate-50 text-slate-900 font-sans antialiased">
+<!-- flag: PYLAB{view_source_master} -->
 
     <!-- ═══════════════════════════════════════════════════════
          HEADER (hidden on welcome screen, shown on all others)
@@ -451,6 +452,15 @@
                         </div>
                     </div>
                 </a>
+            </div>
+
+            <!-- Hacker Mode Card -->
+            <div id="hacker-mode-card" class="hidden mt-8 max-w-2xl mx-auto">
+              <a href="challenges.html" class="block hacker-card rounded-2xl p-6 text-center no-underline">
+                <p style="color: #22c55e; font-size: 0.85rem; margin-bottom: 0.5rem;">> hacker_mode_enabled</p>
+                <p style="color: #4ade80; font-size: 1.25rem; font-weight: 700;">Enter the Lab</p>
+                <p style="color: #555; font-size: 0.75rem; margin-top: 0.5rem;">CTF challenges await</p>
+              </a>
             </div>
 
             <!-- Weekly Leaderboard -->
@@ -1022,6 +1032,18 @@
             if (typeof Gamification !== 'undefined' && Gamification.applyPerks) {
                 Gamification.applyPerks();
             }
+            checkHackerMode();
+        }
+
+        function checkHackerMode() {
+          var student = FirebaseSync.getStudent();
+          if (!student || !student.classCode) return;
+          FirebaseSync.getClassSettings(student.classCode).then(function(settings) {
+            var card = document.getElementById("hacker-mode-card");
+            if (card && settings.hackerModeEnabled) {
+              card.classList.remove("hidden");
+            }
+          });
         }
 
         function renderDailyChallenge() {
@@ -2337,6 +2359,57 @@
             enterTeacher: enterTeacher,
             init: init
         };
+    })();
+
+    // Easter egg: console message
+    console.log("%c\n  _____       _   _                   _           _     \n |  __ \\     | | | |                 | |         | |    \n | |__) |   _| |_| |__   ___  _ __   | |     __ _| |__  \n |  ___/ | | | __| '_ \\ / _ \\| '_ \\  | |    / _` | '_ \\ \n | |   | |_| | |_| | | | (_) | | | | | |___| (_| | |_) |\n |_|    \\__, |\\__|_| |_|\\___/|_| |_| |______\\__,_|_.__/ \n         __/ |                                          \n        |___/                                           \n\n Looking for secrets? Try typing Gamification.secret() in this console.\n", "color: #22c55e; font-family: monospace");
+
+    // Easter egg: Konami code
+    (function() {
+      var konamiSequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
+      var konamiPos = 0;
+
+      document.addEventListener("keydown", function(e) {
+        if (e.keyCode === konamiSequence[konamiPos]) {
+          konamiPos++;
+          if (konamiPos === konamiSequence.length) {
+            konamiPos = 0;
+            // Auto-claim the flag
+            var result = Gamification.claimFlag("PYLAB{konami_coder}");
+
+            // Matrix rain animation
+            var rain = document.createElement("div");
+            rain.className = "matrix-rain";
+            document.body.appendChild(rain);
+
+            var chars = "01PYLAB{}HACK";
+            for (var i = 0; i < 60; i++) {
+              var span = document.createElement("span");
+              span.className = "matrix-char";
+              span.textContent = chars.charAt(Math.floor(Math.random() * chars.length));
+              span.style.left = Math.random() * 100 + "vw";
+              span.style.animationDuration = (1 + Math.random() * 2) + "s";
+              span.style.animationDelay = Math.random() * 2 + "s";
+              rain.appendChild(span);
+            }
+
+            // Show flag claimed message
+            var msg = document.createElement("div");
+            msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10001;background:#0a0a0a;border:2px solid #22c55e;border-radius:12px;padding:2rem;text-align:center;font-family:monospace;color:#22c55e;";
+            msg.innerHTML = '<div style="font-size:1.5rem;font-weight:bold;margin-bottom:1rem">PYLAB{konami_coder}</div>' +
+              '<div style="color:#4ade80">' + (result.success ? "Flag claimed! +" + result.xp + " XP" : "Flag already claimed!") + '</div>';
+            document.body.appendChild(msg);
+
+            // Clean up after 4 seconds
+            setTimeout(function() {
+              if (rain.parentNode) rain.parentNode.removeChild(rain);
+              if (msg.parentNode) msg.parentNode.removeChild(msg);
+            }, 4000);
+          }
+        } else {
+          konamiPos = 0;
+        }
+      });
     })();
 
     // Start the app
