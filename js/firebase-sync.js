@@ -352,6 +352,8 @@ var FirebaseSync = (function () {
 
         if (!profile) return;
 
+        var rawGameData = JSON.parse(localStorage.getItem("pythonlab_game") || "{}");
+
         var docData = {
             nickname: student.nickname,
             email: student.email || "",
@@ -366,6 +368,8 @@ var FirebaseSync = (function () {
             completedExerciseIds: Object.keys(profile.completedExercises),
             weeklyXP: profile.weeklyXP || 0,
             weekStartDate: profile.weekStartDate || "",
+            claimedFlags: rawGameData.claimedFlags || [],
+            completedChallenges: rawGameData.completedChallenges || {},
             lastSynced: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: new Date().toISOString()
         };
@@ -656,7 +660,8 @@ var FirebaseSync = (function () {
           leaderboardEnabled: data.leaderboardEnabled || false,
           leaderboardAnonymous: data.leaderboardAnonymous || false,
           doubleXP: data.doubleXP || false,
-          topicUnlockOverride: data.topicUnlockOverride || null
+          topicUnlockOverride: data.topicUnlockOverride || null,
+          hackerModeEnabled: data.hackerModeEnabled || false
         };
       });
     }
@@ -870,6 +875,10 @@ var FirebaseSync = (function () {
                     }
                     gameData.earnedBadges = badges;
                 }
+
+                // Restore CTF data
+                gameData.claimedFlags = data.claimedFlags || [];
+                gameData.completedChallenges = data.completedChallenges || {};
 
                 try {
                     localStorage.setItem("pythonlab_game", JSON.stringify(gameData));
