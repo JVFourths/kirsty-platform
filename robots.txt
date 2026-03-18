@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# Nothing to see here... or is there?
+# Flag: PYLAB{robots_txt_reader}
+# Enter this flag in the Secrets section on your profile page.
