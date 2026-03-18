@@ -57,11 +57,17 @@ Two components:
 
 ### Flag Claiming Mechanism
 - `js/gamification.js` stores a map of valid flags to badge IDs and XP values
-- A `claimFlag(flagText)` function validates the flag, awards XP, and grants the corresponding badge
-- Exposed as `Gamification.claimFlag(flag)` for the console egg
-- The `Gamification.secret()` function internally calls `claimFlag`
-- Duplicate claims are rejected (flag already claimed)
+- A `claimFlag(flagText)` function validates the flag, awards XP directly to `totalXP` (bypassing `completeExercise` — flags are not exercises), updates `weeklyXP`, grants the corresponding badge, saves to localStorage, and calls `FirebaseSync.syncProgress()`
+- Exposed as `Gamification.claimFlag(flag)` for the console egg and profile page submission
+- The `Gamification.secret()` function internally calls `claimFlag` and returns the flag string on first call, or "Flag already claimed!" on subsequent calls
+- Duplicate claims are rejected (flag already claimed) — `claimFlag` returns `{ success: false, message: "Already claimed" }`
 - Claimed flags are stored in `pythonlab_game.claimedFlags` array
+
+### Easter Egg Auto-Claiming
+- **Egg 2 (Console):** Auto-claimed when `Gamification.secret()` is called — no manual flag entry needed
+- **Egg 3 (Konami):** Auto-claimed when the code is entered — the animation includes a "Flag claimed!" message and the XP popup. No manual entry needed
+- **Egg 4 (Hidden Page):** `secret.html` auto-claims on page load by calling `Gamification.claimFlag()` directly
+- **Eggs 1 & 5 (Source Code, Robots.txt):** These require manual entry in the Secrets input on the profile page, since the student discovers a text flag they must type in
 
 ### Flag Submission UI
 - Profile page: a "Secrets" section appears after the first flag is claimed OR after Hacker Mode is enabled for the student's class
@@ -110,8 +116,8 @@ A global `CHALLENGES` array with challenge objects:
 2. **Base64 Basics** (Python) — "This string is encoded in base64: `UHl0aG9uIExhYg==`. Use Python's `base64` module to decode it"
    - Expected output: `Python Lab`
 
-3. **Page Inspector** (Discovery) — "Every web page has a `<title>` tag. What is the exact title of the Python Lab login page?"
-   - Expected answer: matches the `<title>` content of `login.html`
+3. **Page Inspector** (Discovery) — "Every web page has a `<title>` tag. What is the exact title of the Python Lab login page? Hint: open the login page and view its source code."
+   - Expected answer: hardcoded in `data/challenges.js` as the current login page title. Answer matching is case-insensitive and trimmed of whitespace. The `expectedAnswer` field stores the canonical answer as a lowercase trimmed string.
 
 **Hacker tier (25 XP):**
 
@@ -131,6 +137,18 @@ A global `CHALLENGES` array with challenge objects:
 
 8. **Pattern Cracker** (Python) — "This function generates passwords. Given these 5 outputs, figure out the pattern and predict the next 3." Requires analysing the pattern and writing code.
    - Expected output: the next 3 passwords
+
+### Challenge Completion
+
+Challenge completion does NOT use `Gamification.completeExercise()`. Instead, a dedicated `Gamification.completeChallenge(challengeId, xp)` function is added that:
+- Adds the challenge to `pythonlab_game.completedChallenges` with XP and timestamp
+- Adds the exact XP amount from the challenge definition to `totalXP` and `weeklyXP` (no random bonus, no Double XP multiplier — CTF XP is fixed)
+- Increments `totalExercises`
+- Checks CTF badges via `_checkCtfBadges(data)`
+- Saves to localStorage and calls `FirebaseSync.syncProgress()`
+- Returns `{ xpGained, newBadges }`
+
+Discovery challenge answers are validated by trimming whitespace, converting to lowercase, and comparing to `expectedAnswer` (also stored lowercase and trimmed).
 
 ### Challenge UI
 
@@ -160,7 +178,13 @@ Separate badge set with hacker theme, displayed in the regular badge gallery on 
 | `ctf-egg-hunter` | Easter Egg Hunter | Find 3 Easter eggs | 🥚 |
 | `ctf-full-recon` | Full Recon | Find all Easter eggs | 🕵️ |
 
-Badge definitions are added to the existing `BADGES` array in `gamification.js` with a `ctf: true` flag to visually distinguish them in the gallery.
+Badge definitions are added to the existing `BADGES` array in `gamification.js` with a `ctf: true` flag to visually distinguish them in the gallery. CTF badges use `check: function() { return false; }` (same pattern as mystery badges) — they are awarded by the dedicated `_checkCtfBadges(data)` function which checks `completedChallenges` and `claimedFlags` fields, not the standard `_checkBadges` loop.
+
+The `_checkCtfBadges(data)` function:
+- Counts `Object.keys(data.completedChallenges).length` for challenge-based badges
+- Counts `data.claimedFlags.length` for Easter egg badges
+- Checks challenge types (cipher IDs contain "caesar", "hex", or "chain"; discovery IDs have `type: "discovery"` in challenge data) for type-specific badges
+- Awards badges directly into `data.earnedBadges`
 
 ---
 
@@ -203,10 +227,12 @@ When not enabled, nothing appears — no hint the feature exists.
 
 ### Challenges Page (`challenges.html`)
 - Full dark terminal theme
-- Loads: `data/exercises.js`, `data/challenges.js`, `data/daily-challenges.js`, `js/progress.js`, `js/gamification.js`, `js/celebrations.js`, `js/firebase-sync.js`
-- Challenge completion calls `Gamification.completeExercise()` for XP (type: "make" for Python, custom for discovery)
-- CTF badge checks run after each completion
-- Progress syncs to Firestore via `FirebaseSync.syncProgress()`
+- Loads: `data/challenges.js`, `js/gamification.js`, `js/celebrations.js`, `js/firebase-sync.js` (does NOT need `data/exercises.js` or `data/daily-challenges.js` — challenges are self-contained)
+- Challenge completion calls `Gamification.completeChallenge(challengeId, xp)` — NOT `completeExercise`
+- CTF badge checks run automatically inside `completeChallenge`
+- Progress syncs to Firestore inside `completeChallenge`
+
+**Access control:** On page load, `challenges.html` checks if Hacker Mode is enabled for the student's class via `FirebaseSync.getClassSettings()`. If not enabled, the page shows a "Hacker Mode is not enabled for your class" message and a back link. Direct URL access without Hacker Mode does not reveal challenge content.
 
 ---
 
@@ -241,8 +267,8 @@ When not enabled, nothing appears — no hint the feature exists.
 - `robots.txt` — Easter egg with flag in comment
 
 ### Modified files
-- `js/gamification.js` — CTF badges, flag claiming, `secret()` function, challenge completion tracking
-- `js/firebase-sync.js` — Hacker Mode setting read
+- `js/gamification.js` — CTF badges, flag claiming, `secret()` function, `completeChallenge()` function, `_checkCtfBadges()`, `_defaultData()` updated with `claimedFlags: []` and `completedChallenges: {}`
+- `js/firebase-sync.js` — (1) `getClassSettings()` updated to include `hackerModeEnabled` in its return object, (2) `syncProgress()` updated to include `claimedFlags` and `completedChallenges` in the Firestore payload, (3) `loginWithCode()` updated to restore `claimedFlags` and `completedChallenges` from Firestore on device switch
 - `index.html` — Hacker Mode card, konami code listener, console Easter egg, source code comment Easter egg
 - `profile.html` — Secrets section with flag input, CTF badge styling
 - `teacher.html` — Hacker Mode toggle in class settings
