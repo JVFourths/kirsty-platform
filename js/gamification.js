@@ -87,7 +87,16 @@ var Gamification = (function () {
         { id: "weekly-champion-gold", title: "Weekly Champion III", desc: "Earned 5 Weekly Chests", icon: "🥇", check: function(d) { return d.weeklyChestsEarned >= 5; } },
 
         // Class goal
-        { id: "team-player", title: "Team Player", desc: "Class goal completed together!", icon: "🤝" }
+        { id: "team-player", title: "Team Player", desc: "Class goal completed together!", icon: "🤝" },
+
+        // CTF badges
+        { id: "ctf-script-kiddie", title: "Script Kiddie", desc: "Complete your first CTF challenge", icon: "\uD83D\uDCBB", ctf: true, check: function() { return false; } },
+        { id: "ctf-white-hat", title: "White Hat", desc: "Complete 3 CTF challenges", icon: "\uD83C\uDFA9", ctf: true, check: function() { return false; } },
+        { id: "ctf-code-breaker", title: "Code Breaker", desc: "Complete a cipher challenge", icon: "\uD83D\uDD13", ctf: true, check: function() { return false; } },
+        { id: "ctf-packet-sniffer", title: "Packet Sniffer", desc: "Complete a discovery challenge", icon: "\uD83D\uDD0D", ctf: true, check: function() { return false; } },
+        { id: "ctf-zero-day", title: "Zero Day", desc: "Complete all CTF challenges", icon: "\uD83C\uDFF4", ctf: true, check: function() { return false; } },
+        { id: "ctf-egg-hunter", title: "Easter Egg Hunter", desc: "Find 3 Easter eggs", icon: "\uD83E\uDD5A", ctf: true, check: function() { return false; } },
+        { id: "ctf-full-recon", title: "Full Recon", desc: "Find all Easter eggs", icon: "\uD83D\uDD75\uFE0F", ctf: true, check: function() { return false; } }
     ];
 
     /* ═══════════════════════════════════════════
@@ -133,7 +142,9 @@ var Gamification = (function () {
             streakBrokenValue: 0,
             streakRecoveryExpiry: "",
             activityHistory: [],
-            selectedPerks: {}
+            selectedPerks: {},
+            claimedFlags: [],
+            completedChallenges: {}
         };
     }
 
@@ -1136,6 +1147,180 @@ var Gamification = (function () {
     }
 
     /* ═══════════════════════════════════════════
+       CTF FLAGS & CHALLENGES
+       ═══════════════════════════════════════════ */
+
+    // Flag map: XP values for each Easter egg flag
+    // Badges are awarded separately by _checkCtfBadges based on claimedFlags count
+    var FLAG_MAP = {
+      "PYLAB{view_source_master}": { xp: 20 },
+      "PYLAB{console_hacker}": { xp: 20 },
+      "PYLAB{konami_coder}": { xp: 20 },
+      "PYLAB{hidden_path_finder}": { xp: 25 },
+      "PYLAB{robots_txt_reader}": { xp: 25 }
+    };
+
+    function claimFlag(flagText) {
+      if (!flagText) return { success: false, message: "No flag provided" };
+      var normalized = flagText.trim().toUpperCase();
+      // Try case-insensitive match
+      var matchedKey = null;
+      for (var key in FLAG_MAP) {
+        if (key.toUpperCase() === normalized) {
+          matchedKey = key;
+          break;
+        }
+      }
+      if (!matchedKey) return { success: false, message: "Invalid flag" };
+
+      var data = _load();
+      if (!data.claimedFlags) data.claimedFlags = [];
+      for (var i = 0; i < data.claimedFlags.length; i++) {
+        if (data.claimedFlags[i].toUpperCase() === normalized) {
+          return { success: false, message: "Already claimed" };
+        }
+      }
+
+      var reward = FLAG_MAP[matchedKey];
+      data.claimedFlags.push(matchedKey);
+      data.totalXP = data.totalXP + reward.xp;
+      data.weeklyXP = (data.weeklyXP || 0) + reward.xp;
+
+      // Check CTF badges
+      var newBadges = _checkCtfBadges(data);
+
+      _save(data);
+
+      if (typeof FirebaseSync !== "undefined" && FirebaseSync.syncProgress) {
+        FirebaseSync.syncProgress();
+      }
+
+      return { success: true, xp: reward.xp, flag: matchedKey, newBadges: newBadges };
+    }
+
+    function secret() {
+      var result = claimFlag("PYLAB{console_hacker}");
+      if (result.success) {
+        return "PYLAB{console_hacker} — Flag claimed! +" + result.xp + " XP";
+      }
+      return "Flag already claimed!";
+    }
+
+    function completeChallenge(challengeId, xp) {
+      var data = _load();
+      if (!data.completedChallenges) data.completedChallenges = {};
+      if (data.completedChallenges[challengeId]) {
+        return { xpGained: 0, alreadyDone: true, newBadges: [] };
+      }
+
+      data.completedChallenges[challengeId] = { xp: xp, timestamp: Date.now() };
+      data.totalXP = data.totalXP + xp;
+      data.weeklyXP = (data.weeklyXP || 0) + xp;
+      data.totalExercises = data.totalExercises + 1;
+
+      var newBadges = _checkCtfBadges(data);
+
+      _save(data);
+
+      if (typeof FirebaseSync !== "undefined" && FirebaseSync.syncProgress) {
+        FirebaseSync.syncProgress();
+      }
+
+      return { xpGained: xp, alreadyDone: false, newBadges: newBadges };
+    }
+
+    function isChallengeComplete(challengeId) {
+      var data = _load();
+      return !!(data.completedChallenges && data.completedChallenges[challengeId]);
+    }
+
+    function _checkCtfBadges(data) {
+      var newBadges = [];
+      if (!data.completedChallenges) data.completedChallenges = {};
+      if (!data.claimedFlags) data.claimedFlags = [];
+
+      var challengeCount = 0;
+      var challengeKeys = [];
+      for (var key in data.completedChallenges) {
+        if (data.completedChallenges.hasOwnProperty(key)) {
+          challengeCount++;
+          challengeKeys.push(key);
+        }
+      }
+      var flagCount = data.claimedFlags.length;
+
+      // Script Kiddie: first challenge
+      if (challengeCount >= 1 && !data.earnedBadges["ctf-script-kiddie"]) {
+        data.earnedBadges["ctf-script-kiddie"] = Date.now();
+        newBadges.push(_findBadge("ctf-script-kiddie"));
+      }
+
+      // White Hat: 3 challenges
+      if (challengeCount >= 3 && !data.earnedBadges["ctf-white-hat"]) {
+        data.earnedBadges["ctf-white-hat"] = Date.now();
+        newBadges.push(_findBadge("ctf-white-hat"));
+      }
+
+      // Code Breaker: cipher challenge (ids contain caesar, hex, or cipher-chain)
+      var hasCipher = false;
+      for (var c = 0; c < challengeKeys.length; c++) {
+        if (challengeKeys[c].indexOf("caesar") !== -1 || challengeKeys[c].indexOf("hex") !== -1 || challengeKeys[c].indexOf("cipher-chain") !== -1) {
+          hasCipher = true;
+          break;
+        }
+      }
+      if (hasCipher && !data.earnedBadges["ctf-code-breaker"]) {
+        data.earnedBadges["ctf-code-breaker"] = Date.now();
+        newBadges.push(_findBadge("ctf-code-breaker"));
+      }
+
+      // Packet Sniffer: discovery challenge
+      // Note: CHALLENGES global is only available on challenges.html.
+      // On other pages (index.html, profile.html), this block is safely skipped.
+      // These badges will be awarded next time the student visits challenges.html.
+      var hasDiscovery = false;
+      if (typeof CHALLENGES !== "undefined") {
+        for (var d = 0; d < challengeKeys.length; d++) {
+          for (var ch = 0; ch < CHALLENGES.length; ch++) {
+            if (CHALLENGES[ch].id === challengeKeys[d] && CHALLENGES[ch].type === "discovery") {
+              hasDiscovery = true;
+              break;
+            }
+          }
+          if (hasDiscovery) break;
+        }
+      }
+      if (hasDiscovery && !data.earnedBadges["ctf-packet-sniffer"]) {
+        data.earnedBadges["ctf-packet-sniffer"] = Date.now();
+        newBadges.push(_findBadge("ctf-packet-sniffer"));
+      }
+
+      // Zero Day: all challenges complete
+      if (typeof CHALLENGES !== "undefined" && challengeCount >= CHALLENGES.length && !data.earnedBadges["ctf-zero-day"]) {
+        data.earnedBadges["ctf-zero-day"] = Date.now();
+        newBadges.push(_findBadge("ctf-zero-day"));
+      }
+
+      // Easter Egg Hunter: 3 flags
+      if (flagCount >= 3 && !data.earnedBadges["ctf-egg-hunter"]) {
+        data.earnedBadges["ctf-egg-hunter"] = Date.now();
+        newBadges.push(_findBadge("ctf-egg-hunter"));
+      }
+
+      // Full Recon: all 5 flags
+      var totalFlags = 0;
+      for (var fk in FLAG_MAP) {
+        if (FLAG_MAP.hasOwnProperty(fk)) totalFlags++;
+      }
+      if (flagCount >= totalFlags && !data.earnedBadges["ctf-full-recon"]) {
+        data.earnedBadges["ctf-full-recon"] = Date.now();
+        newBadges.push(_findBadge("ctf-full-recon"));
+      }
+
+      return newBadges;
+    }
+
+    /* ═══════════════════════════════════════════
        EXPORT
        ═══════════════════════════════════════════ */
 
@@ -1163,6 +1348,10 @@ var Gamification = (function () {
         getSelectedPerks: getSelectedPerks,
         applyPerks: applyPerks,
         awardBadge: awardBadge,
+        claimFlag: claimFlag,
+        secret: secret,
+        completeChallenge: completeChallenge,
+        isChallengeComplete: isChallengeComplete,
         BADGES: BADGES,
         LEVELS: LEVELS,
         XP_REWARDS: XP_REWARDS
