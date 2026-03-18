@@ -380,3 +380,126 @@
   font-weight: 600;
   margin-top: 0.5rem;
 }
+
+/* ═══════════════════════════════════════
+   CTF / HACKER MODE STYLES
+   ═══════════════════════════════════════ */
+
+/* CTF badge card variant */
+.badge-card.ctf-badge {
+  background: #0a0a0a;
+  border-color: #22c55e;
+  color: #22c55e;
+}
+.badge-card.ctf-badge.earned {
+  background: #0a0a0a;
+  border-color: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+}
+.badge-card.ctf-badge.locked {
+  background: #111;
+  border-color: #333;
+  color: #555;
+}
+.badge-card.ctf-badge .badge-card-title,
+.badge-card.ctf-badge .badge-card-desc {
+  color: inherit;
+}
+
+/* Terminal card on landing page */
+.hacker-card {
+  background: #0a0a0a;
+  border: 2px solid #22c55e;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  animation: hacker-pulse 3s ease-in-out infinite;
+}
+@keyframes hacker-pulse {
+  0%, 100% { border-color: #22c55e; box-shadow: 0 0 5px rgba(34, 197, 94, 0.2); }
+  50% { border-color: #4ade80; box-shadow: 0 0 15px rgba(34, 197, 94, 0.4); }
+}
+
+/* Scanline overlay for challenges page */
+.scanline-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
+  );
+}
+
+/* Matrix rain animation */
+.matrix-rain {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 10000;
+  overflow: hidden;
+}
+.matrix-char {
+  position: absolute;
+  top: -20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  color: #22c55e;
+  text-shadow: 0 0 8px #22c55e;
+  animation: matrix-fall linear forwards;
+}
+@keyframes matrix-fall {
+  0% { top: -20px; opacity: 1; }
+  80% { opacity: 1; }
+  100% { top: 100vh; opacity: 0; }
+}
+
+/* Secrets section terminal style */
+.secrets-section {
+  background: #0a0a0a;
+  border: 1px solid #22c55e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #22c55e;
+}
+.secrets-section input {
+  background: #111;
+  border: 1px solid #333;
+  color: #22c55e;
+  font-family: 'JetBrains Mono', monospace;
+}
+.secrets-section input:focus {
+  border-color: #22c55e;
+  outline: none;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.3);
+}
+
+/* Challenge cards */
+.challenge-card {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 12px;
+  transition: border-color 0.2s;
+}
+.challenge-card:hover {
+  border-color: #333;
+}
+.challenge-card.completed {
+  border-color: #22c55e;
+}
+.tier-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.tier-script-kiddie { background: #22c55e20; color: #22c55e; }
+.tier-hacker { background: #f59e0b20; color: #f59e0b; }
+.tier-elite { background: #ef444420; color: #ef4444; }
