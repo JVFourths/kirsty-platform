@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacker Mode — Python Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="css/gamification.css">
+    <style>
+        body { background: #0a0a0a; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; }
+        .cm-editor, .CodeMirror { background: #111 !important; color: #22c55e !important; border-radius: 8px; font-size: 14px; }
+        .CodeMirror-gutters { background: #111 !important; border-right: 1px solid #222 !important; }
+        .CodeMirror-linenumber { color: #444 !important; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="scanline-overlay"></div>
+
+    <!-- Header -->
+    <header class="border-b border-gray-800 px-6 py-4">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div>
+                <a href="index.html" class="text-gray-500 hover:text-green-500 text-sm no-underline">&lt; back</a>
+                <h1 class="text-green-500 text-xl font-bold mt-1">> python_lab // hacker_mode</h1>
+            </div>
+            <div id="challenge-progress" class="text-green-400 text-sm"></div>
+        </div>
+    </header>
+
+    <!-- Access Denied -->
+    <div id="access-denied" class="hidden max-w-4xl mx-auto px-6 py-20 text-center">
+        <p class="text-red-500 text-xl font-bold mb-4">> ACCESS DENIED</p>
+        <p class="text-gray-500">Hacker Mode is not enabled for your class.</p>
+        <p class="text-gray-600 text-sm mt-2">Ask your teacher to enable it from the dashboard.</p>
+        <a href="index.html" class="inline-block mt-6 text-green-500 hover:text-green-400 text-sm">&lt; Return to base</a>
+    </div>
+
+    <!-- Challenge List -->
+    <main id="challenge-list" class="hidden max-w-4xl mx-auto px-6 py-8 space-y-4">
+    </main>
+
+    <!-- CTF Badge Gallery -->
+    <div id="ctf-badges" class="hidden max-w-4xl mx-auto px-6 pb-12">
+        <h3 class="text-green-500 text-sm font-bold mb-3">> badges</h3>
+        <div id="ctf-badge-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="data/challenges.js"></script>
+    <script src="js/gamification.js"></script>
+    <script src="js/celebrations.js"></script>
+    <script src="js/firebase-sync.js"></script>
+
+    <script>
+    (function() {
+      var pyodide = null;
+      var editors = {};
+
+      // Check access
+      function init() {
+        Gamification.recordVisit();
+        var student = FirebaseSync.getStudent();
+        if (!student || !student.classCode) {
+          document.getElementById("access-denied").classList.remove("hidden");
+          return;
+        }
+        FirebaseSync.getClassSettings(student.classCode).then(function(settings) {
+          if (!settings.hackerModeEnabled) {
+            document.getElementById("access-denied").classList.remove("hidden");
+            return;
+          }
+          renderChallenges();
+        }).catch(function() {
+          document.getElementById("access-denied").classList.remove("hidden");
+        });
+      }
+
+      function renderChallenges() {
+        var list = document.getElementById("challenge-list");
+        var badgesSection = document.getElementById("ctf-badges");
+        list.classList.remove("hidden");
+        badgesSection.classList.remove("hidden");
+        list.innerHTML = "";
+
+        // Progress counter
+        var doneCount = 0;
+        for (var p = 0; p < CHALLENGES.length; p++) {
+          if (Gamification.isChallengeComplete(CHALLENGES[p].id)) doneCount++;
+        }
+        document.getElementById("challenge-progress").textContent = "> " + doneCount + "/" + CHALLENGES.length + " challenges complete";
+
+        // Render each challenge
+        for (var i = 0; i < CHALLENGES.length; i++) {
+          var ch = CHALLENGES[i];
+          var isDone = Gamification.isChallengeComplete(ch.id);
+          var tierClass = "tier-" + ch.tier;
+
+          var card = document.createElement("div");
+          card.className = "challenge-card p-5" + (isDone ? " completed" : "");
+          card.setAttribute("data-id", ch.id);
+          card.setAttribute("data-index", i);
+
+          // Header (always visible)
+          var header = document.createElement("div");
+          header.className = "flex items-center justify-between cursor-pointer";
+          header.innerHTML =
+            '<div class="flex items-center gap-3">' +
+              '<span class="tier-badge ' + tierClass + '">' + escHtml(ch.tier.replace("-", " ")) + '</span>' +
+              '<span class="font-semibold text-gray-200">' + escHtml(ch.title) + '</span>' +
+            '</div>' +
+            '<div class="flex items-center gap-2">' +
+              '<span class="text-xs text-gray-500">' + ch.xp + ' XP</span>' +
+              (isDone ? '<span class="text-green-500">&#10003;</span>' : '<span class="text-gray-600">&#9656;</span>') +
+            '</div>';
+          card.appendChild(header);
+
+          // Body (expandable)
+          var body = document.createElement("div");
+          body.className = "hidden mt-4";
+          body.setAttribute("id", "challenge-body-" + i);
+
+          // Instructions
+          var instructions = document.createElement("div");
+          instructions.className = "text-sm text-gray-400 mb-4 whitespace-pre-line";
+          instructions.textContent = ch.instructions;
+          body.appendChild(instructions);
+
+          if (ch.type === "python") {
+            // Code editor
+            var editorWrap = document.createElement("div");
+            editorWrap.className = "mb-3";
+            var textarea = document.createElement("textarea");
+            textarea.setAttribute("id", "editor-" + i);
+            textarea.value = ch.starterCode || "";
+            editorWrap.appendChild(textarea);
+            body.appendChild(editorWrap);
+
+            // Output panel
+            var output = document.createElement("div");
+            output.className = "bg-black rounded-lg p-3 mb-3 text-sm min-h-[40px] font-mono";
+            output.setAttribute("id", "output-" + i);
+            output.textContent = "> output will appear here";
+            output.style.color = "#666";
+            body.appendChild(output);
+          } else {
+            // Discovery text input
+            var inputWrap = document.createElement("div");
+            inputWrap.className = "mb-3";
+            var input = document.createElement("input");
+            input.type = "text";
+            input.className = "w-full rounded-lg px-4 py-2.5 text-sm";
+            input.style.cssText = "background:#111;border:1px solid #333;color:#22c55e;font-family:monospace;";
+            input.placeholder = "Type your answer here...";
+            input.setAttribute("id", "answer-" + i);
+            inputWrap.appendChild(input);
+            body.appendChild(inputWrap);
+          }
+
+          // Buttons row
+          var btnRow = document.createElement("div");
+          btnRow.className = "flex items-center gap-3";
+
+          if (ch.type === "python") {
+            var runBtn = document.createElement("button");
+            runBtn.className = "px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition";
+            runBtn.textContent = "Run Code";
+            runBtn.setAttribute("data-index", String(i));
+            runBtn.addEventListener("click", function() { runChallenge(parseInt(this.getAttribute("data-index"))); });
+            btnRow.appendChild(runBtn);
+
+            var submitBtn = document.createElement("button");
+            submitBtn.className = "px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition";
+            submitBtn.textContent = "Submit";
+            submitBtn.setAttribute("data-index", String(i));
+            submitBtn.addEventListener("click", function() { submitChallenge(parseInt(this.getAttribute("data-index"))); });
+            btnRow.appendChild(submitBtn);
+          } else {
+            var submitDiscovery = document.createElement("button");
+            submitDiscovery.className = "px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition";
+            submitDiscovery.textContent = "Submit Answer";
+            submitDiscovery.setAttribute("data-index", String(i));
+            submitDiscovery.addEventListener("click", function() { submitDiscovery2(parseInt(this.getAttribute("data-index"))); });
+            btnRow.appendChild(submitDiscovery);
+          }
+
+          var hintBtn = document.createElement("button");
+          hintBtn.className = "px-3 py-2 text-gray-500 hover:text-gray-300 text-sm transition";
+          hintBtn.textContent = "Hint";
+          hintBtn.setAttribute("data-index", String(i));
+          hintBtn.addEventListener("click", function() {
+            var idx = parseInt(this.getAttribute("data-index"));
+            var hintEl = document.getElementById("hint-" + idx);
+            if (hintEl) hintEl.classList.toggle("hidden");
+          });
+          btnRow.appendChild(hintBtn);
+
+          body.appendChild(btnRow);
+
+          // Hint panel
+          var hintPanel = document.createElement("div");
+          hintPanel.className = "hidden mt-3 text-sm text-amber-400 bg-amber-900/20 rounded-lg p-3";
+          hintPanel.setAttribute("id", "hint-" + i);
+          hintPanel.textContent = ch.hint;
+          body.appendChild(hintPanel);
+
+          // Feedback
+          var feedback = document.createElement("div");
+          feedback.className = "hidden mt-3 text-sm rounded-lg p-3";
+          feedback.setAttribute("id", "feedback-" + i);
+          body.appendChild(feedback);
+
+          card.appendChild(body);
+
+          // Toggle expand
+          header.addEventListener("click", (function(idx) {
+            return function() {
+              var bodyEl = document.getElementById("challenge-body-" + idx);
+              if (bodyEl) {
+                bodyEl.classList.toggle("hidden");
+                // Init CodeMirror if needed
+                if (!editors[idx] && CHALLENGES[idx].type === "python") {
+                  var ta = document.getElementById("editor-" + idx);
+                  if (ta) {
+                    editors[idx] = CodeMirror.fromTextArea(ta, {
+                      mode: "python",
+                      theme: "default",
+                      lineNumbers: true,
+                      indentUnit: 4
+                    });
+                  }
+                }
+              }
+            };
+          })(i));
+
+          list.appendChild(card);
+        }
+
+        renderCtfBadges();
+      }
+
+      function loadPyodide() {
+        if (pyodide) return Promise.resolve(pyodide);
+        return new Promise(function(resolve, reject) {
+          var script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js";
+          script.onload = function() {
+            window.loadPyodide().then(function(py) {
+              pyodide = py;
+              resolve(pyodide);
+            }).catch(reject);
+          };
+          document.head.appendChild(script);
+        });
+      }
+
+      function runChallenge(idx) {
+        var ch = CHALLENGES[idx];
+        var code = editors[idx] ? editors[idx].getValue() : "";
+        var outputEl = document.getElementById("output-" + idx);
+        outputEl.textContent = "> running...";
+        outputEl.style.color = "#666";
+
+        loadPyodide().then(function(py) {
+          py.runPython("import sys; from io import StringIO; sys.stdout = StringIO(); sys.stderr = StringIO()");
+          try {
+            py.runPython(code);
+            var stdout = py.runPython("sys.stdout.getvalue()");
+            outputEl.textContent = stdout.trim() || "(no output)";
+            outputEl.style.color = "#22c55e";
+          } catch (err) {
+            var stderr = "";
+            try { stderr = py.runPython("sys.stderr.getvalue()"); } catch(e) {}
+            var errMsg = stderr || err.message || String(err);
+            // Extract clean error
+            var lines = errMsg.split("\n");
+            outputEl.textContent = lines[lines.length - 1] || errMsg;
+            outputEl.style.color = "#ef4444";
+          }
+        }).catch(function(err) {
+          outputEl.textContent = "Failed to load Python: " + err.message;
+          outputEl.style.color = "#ef4444";
+        });
+      }
+
+      function submitChallenge(idx) {
+        var ch = CHALLENGES[idx];
+        var outputEl = document.getElementById("output-" + idx);
+        var feedbackEl = document.getElementById("feedback-" + idx);
+        var output = outputEl.textContent.trim();
+
+        if (output === ch.expectedOutput.trim()) {
+          onCorrect(idx, ch, feedbackEl);
+        } else {
+          feedbackEl.className = "mt-3 text-sm rounded-lg p-3 bg-red-900/30 text-red-400";
+          feedbackEl.textContent = "Not quite right. Check your output and try again.";
+          feedbackEl.classList.remove("hidden");
+        }
+      }
+
+      function submitDiscovery2(idx) {
+        var ch = CHALLENGES[idx];
+        var answerEl = document.getElementById("answer-" + idx);
+        var feedbackEl = document.getElementById("feedback-" + idx);
+        var answer = answerEl.value.trim().toLowerCase();
+
+        if (answer === ch.expectedAnswer) {
+          onCorrect(idx, ch, feedbackEl);
+        } else {
+          feedbackEl.className = "mt-3 text-sm rounded-lg p-3 bg-red-900/30 text-red-400";
+          feedbackEl.textContent = "Not quite right. Try again.";
+          feedbackEl.classList.remove("hidden");
+        }
+      }
+
+      function onCorrect(idx, ch, feedbackEl) {
+        var result = Gamification.completeChallenge(ch.id, ch.xp);
+        if (result.alreadyDone) {
+          feedbackEl.className = "mt-3 text-sm rounded-lg p-3 bg-green-900/30 text-green-400";
+          feedbackEl.textContent = "Already completed!";
+          feedbackEl.classList.remove("hidden");
+          return;
+        }
+
+        feedbackEl.className = "mt-3 text-sm rounded-lg p-3 bg-green-900/30 text-green-400";
+        feedbackEl.textContent = "CORRECT! +" + result.xpGained + " XP";
+        feedbackEl.classList.remove("hidden");
+
+        // Mark card as completed
+        var cards = document.querySelectorAll(".challenge-card");
+        if (cards[idx]) cards[idx].classList.add("completed");
+
+        // Show celebrations
+        if (result.newBadges && result.newBadges.length > 0) {
+          for (var b = 0; b < result.newBadges.length; b++) {
+            Celebrations.showBadge(result.newBadges[b]);
+          }
+        }
+
+        // Update progress counter
+        var doneCount = 0;
+        for (var p = 0; p < CHALLENGES.length; p++) {
+          if (Gamification.isChallengeComplete(CHALLENGES[p].id)) doneCount++;
+        }
+        document.getElementById("challenge-progress").textContent = "> " + doneCount + "/" + CHALLENGES.length + " challenges complete";
+
+        renderCtfBadges();
+      }
+
+      function renderCtfBadges() {
+        var grid = document.getElementById("ctf-badge-grid");
+        if (!grid) return;
+        grid.innerHTML = "";
+        var profile = Gamification.getProfile();
+        var allBadges = profile.allBadges || [];
+
+        for (var i = 0; i < allBadges.length; i++) {
+          var b = allBadges[i];
+          if (!b.ctf) continue;
+          var isEarned = profile.earnedBadges && profile.earnedBadges[b.id];
+          var card = document.createElement("div");
+          card.className = "badge-card ctf-badge " + (isEarned ? "earned" : "locked");
+          card.innerHTML =
+            '<div class="badge-card-icon text-2xl">' + b.icon + '</div>' +
+            '<div class="badge-card-title text-xs font-bold mt-1">' + escHtml(b.title) + '</div>' +
+            '<div class="badge-card-desc text-xs mt-0.5" style="color:#666">' + escHtml(b.desc) + '</div>';
+          grid.appendChild(card);
+        }
+      }
+
+      function escHtml(str) {
+        var div = document.createElement("div");
+        div.textContent = str || "";
+        return div.innerHTML;
+      }
+
+      // Boot
+      init();
+    })();
+    </script>
+</body>
+</html>
