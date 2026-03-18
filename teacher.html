@@ -129,6 +129,7 @@
             <button class="tab-btn active px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="progress">Progress</button>
             <button class="tab-btn px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="assignments">Assignments</button>
             <button class="tab-btn px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="classes">Manage Classes</button>
+            <button class="tab-btn px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="feedback">Feedback</button>
         </div>
 
         <!-- ============================================================
@@ -532,6 +533,46 @@
             </div>
         </div>
 
+        <!-- ============================================================
+             TAB 4: FEEDBACK
+             ============================================================ -->
+        <div id="tab-feedback" class="hidden">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
+                <h3 class="text-base font-bold text-slate-900 mb-2">Send Feedback</h3>
+                <p class="text-sm text-slate-500 mb-4">Let us know what's working, what isn't, or what you'd like to see next. Your feedback goes directly to the development team.</p>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                        <select id="feedback-category" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white outline-none">
+                            <option value="general">General feedback</option>
+                            <option value="bug">Bug report</option>
+                            <option value="feature">Feature request</option>
+                            <option value="content">Exercise / content feedback</option>
+                            <option value="hacker-mode">Hacker Mode / CTF</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Your feedback</label>
+                        <textarea id="feedback-text" rows="5" placeholder="Tell us what you think..." class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none resize-y"></textarea>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span id="feedback-status" class="text-sm"></span>
+                        <button id="feedback-submit-btn" class="rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-brand-700 hover:to-brand-800 active:scale-[0.98]">
+                            Send Feedback
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Previous feedback -->
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+                <h3 class="text-base font-bold text-slate-900 mb-4">Your Previous Feedback</h3>
+                <div id="feedback-list" class="space-y-3">
+                    <p class="text-sm text-slate-400">Loading...</p>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- Firebase SDK -->
@@ -701,8 +742,10 @@
                 document.getElementById("tab-progress").classList.toggle("hidden", this.dataset.tab !== "progress");
                 document.getElementById("tab-assignments").classList.toggle("hidden", this.dataset.tab !== "assignments");
                 document.getElementById("tab-classes").classList.toggle("hidden", this.dataset.tab !== "classes");
+                document.getElementById("tab-feedback").classList.toggle("hidden", this.dataset.tab !== "feedback");
                 if (this.dataset.tab === "assignments") loadAssignments();
                 if (this.dataset.tab === "classes") loadManagedClasses();
+                if (this.dataset.tab === "feedback") loadFeedback();
             });
         }
 
@@ -1515,6 +1558,176 @@
             var div = document.createElement("div");
             div.textContent = str;
             return div.innerHTML;
+        }
+
+        /* ═══════════════════════════════════════════
+           NOTIFICATIONS
+           ═══════════════════════════════════════════ */
+        var NOTIFICATIONS = [
+          {
+            id: "hacker-mode-launch-2026-03",
+            title: "New Feature: Hacker Mode",
+            body: "Hi Kirsty! We\u2019ve added a \u201cHacker Mode\u201d feature that you can switch on per class from your Class Settings. Once enabled, students see a dark terminal-styled \u201cEnter the Lab\u201d card on their landing page that takes them to a set of CTF (Capture The Flag) challenges \u2014 these are Python coding puzzles with a hacker/security theme.\n\nThere are 8 challenges across three difficulty tiers: Script Kiddie (easy \u2014 decode a Caesar cipher, crack a base64 string), Hacker (medium \u2014 decode hexadecimal, reverse engineer a program\u2019s output), and Elite (hard \u2014 multi-step cipher chains, cracking password patterns). All challenges require the same Python skills they\u2019re learning in the normal exercises, just wrapped in a \u201cyou\u2019re a hacker breaking codes\u201d theme.\n\nWe\u2019ve also hidden 5 Easter eggs across the platform \u2014 a secret flag in the page source code, a hidden console command, the Konami code (\u2191\u2191\u2193\u2193\u2190\u2192\u2190\u2192BA triggers a Matrix-style animation), a hidden page at a secret URL, and a clue in the robots.txt file. Students discover these organically and enter the flag codes on their profile page to claim bonus XP.\n\nThere are also 7 special hacker badges they can earn (Script Kiddie, White Hat, Code Breaker, etc.) which appear alongside their normal badges. Everything is off by default \u2014 you turn on Hacker Mode when you\u2019re ready, and you can leave it off for classes where it wouldn\u2019t be appropriate.\n\nThe challenges award XP into their normal total so it all feeds into the same level and streak system they\u2019re already using.\n\nWe\u2019d love your feedback \u2014 head to the Feedback tab to let us know what you think!",
+            date: "2026-03-18"
+          }
+        ];
+
+        function checkNotifications() {
+          var dismissed = JSON.parse(localStorage.getItem("pythonlab_dismissed_notifications") || "[]");
+          for (var i = 0; i < NOTIFICATIONS.length; i++) {
+            var n = NOTIFICATIONS[i];
+            if (dismissed.indexOf(n.id) === -1) {
+              showNotification(n);
+              return; // Show one at a time
+            }
+          }
+        }
+
+        function showNotification(notification) {
+          var overlay = document.createElement("div");
+          overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;";
+
+          var modal = document.createElement("div");
+          modal.style.cssText = "background:white;border-radius:16px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,0.25);";
+
+          var header = document.createElement("div");
+          header.style.cssText = "padding:1.5rem 1.5rem 0;";
+          header.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">' +
+            '<span style="font-size:1.25rem;">🔔</span>' +
+            '<h2 style="font-size:1.1rem;font-weight:700;color:#1e293b;">' + escHtml(notification.title) + '</h2>' +
+            '</div>' +
+            '<p style="font-size:0.75rem;color:#94a3b8;">' + escHtml(notification.date) + '</p>';
+          modal.appendChild(header);
+
+          var body = document.createElement("div");
+          body.style.cssText = "padding:1rem 1.5rem;font-size:0.875rem;color:#475569;line-height:1.7;white-space:pre-line;";
+          body.textContent = notification.body;
+          modal.appendChild(body);
+
+          var footer = document.createElement("div");
+          footer.style.cssText = "padding:1rem 1.5rem 1.5rem;text-align:right;";
+          var btn = document.createElement("button");
+          btn.style.cssText = "background:linear-gradient(to right,#4f46e5,#4338ca);color:white;font-weight:600;font-size:0.875rem;padding:0.625rem 1.5rem;border-radius:12px;border:none;cursor:pointer;";
+          btn.textContent = "Got it!";
+          btn.addEventListener("click", function() {
+            var dismissed = JSON.parse(localStorage.getItem("pythonlab_dismissed_notifications") || "[]");
+            dismissed.push(notification.id);
+            localStorage.setItem("pythonlab_dismissed_notifications", JSON.stringify(dismissed));
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          });
+          footer.appendChild(btn);
+          modal.appendChild(footer);
+
+          overlay.appendChild(modal);
+          document.body.appendChild(overlay);
+        }
+
+        // Show notifications on page load
+        setTimeout(checkNotifications, 500);
+
+        /* ═══════════════════════════════════════════
+           FEEDBACK
+           ═══════════════════════════════════════════ */
+        document.getElementById("feedback-submit-btn").addEventListener("click", function() {
+          var category = document.getElementById("feedback-category").value;
+          var text = document.getElementById("feedback-text").value.trim();
+          var statusEl = document.getElementById("feedback-status");
+          if (!text) {
+            statusEl.style.color = "#ef4444";
+            statusEl.textContent = "Please enter some feedback.";
+            return;
+          }
+
+          var btn = this;
+          btn.disabled = true;
+          btn.textContent = "Sending...";
+          statusEl.textContent = "";
+
+          var entry = {
+            category: category,
+            text: text,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            teacherNickname: "Teacher",
+            userAgent: navigator.userAgent
+          };
+
+          // Try to get teacher identity
+          try {
+            var student = FirebaseSync.getStudent();
+            if (student && student.nickname) entry.teacherNickname = student.nickname;
+            if (student && student.classCode) entry.classCode = student.classCode;
+          } catch(e) {}
+
+          db.collection("feedback").add(entry).then(function() {
+            statusEl.style.color = "#22c55e";
+            statusEl.textContent = "Feedback sent! Thank you.";
+            document.getElementById("feedback-text").value = "";
+            btn.disabled = false;
+            btn.textContent = "Send Feedback";
+            loadFeedback();
+          }).catch(function(err) {
+            statusEl.style.color = "#ef4444";
+            statusEl.textContent = "Failed to send: " + err.message;
+            btn.disabled = false;
+            btn.textContent = "Send Feedback";
+          });
+        });
+
+        function loadFeedback() {
+          var list = document.getElementById("feedback-list");
+          if (!list) return;
+
+          if (!db) {
+            list.innerHTML = '<p class="text-sm text-slate-400">Firebase not connected.</p>';
+            return;
+          }
+
+          db.collection("feedback")
+            .orderBy("timestamp", "desc")
+            .limit(20)
+            .get()
+            .then(function(snapshot) {
+              list.innerHTML = "";
+              if (snapshot.empty) {
+                list.innerHTML = '<p class="text-sm text-slate-400">No feedback submitted yet.</p>';
+                return;
+              }
+              snapshot.forEach(function(doc) {
+                var data = doc.data();
+                var card = document.createElement("div");
+                card.className = "p-4 border border-slate-100 rounded-xl";
+
+                var dateStr = "";
+                if (data.timestamp && data.timestamp.toDate) {
+                  dateStr = data.timestamp.toDate().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+                }
+
+                var categoryLabels = {
+                  general: "General", bug: "Bug Report", feature: "Feature Request",
+                  content: "Content", "hacker-mode": "Hacker Mode"
+                };
+                var catLabel = categoryLabels[data.category] || data.category;
+
+                var headerEl = document.createElement("div");
+                headerEl.className = "flex items-center justify-between mb-2";
+                var badge = document.createElement("span");
+                badge.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700";
+                badge.textContent = catLabel;
+                var dateEl = document.createElement("span");
+                dateEl.className = "text-xs text-slate-400";
+                dateEl.textContent = dateStr;
+                headerEl.appendChild(badge);
+                headerEl.appendChild(dateEl);
+                card.appendChild(headerEl);
+
+                var textEl = document.createElement("p");
+                textEl.className = "text-sm text-slate-600";
+                textEl.textContent = data.text;
+                card.appendChild(textEl);
+
+                list.appendChild(card);
+              });
+            });
         }
 
     })();
