@@ -148,6 +148,19 @@
             </div>
         </div>
 
+        <!-- Secrets Section -->
+        <div id="secrets-section" class="hidden mt-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Secrets</h3>
+            <div class="secrets-section">
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="flag-input" placeholder="Enter flag code..." class="flex-1 rounded-lg px-3 py-2 text-sm">
+                    <button id="flag-submit-btn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition" style="font-family: monospace;">Submit</button>
+                </div>
+                <div id="flag-result" class="hidden text-sm mb-3"></div>
+                <div id="claimed-flags-list"></div>
+            </div>
+        </div>
+
         <!-- Customise Section -->
         <div class="mt-8 mb-10">
           <h3 class="text-lg font-bold text-gray-800 mb-4">🎨 Customise</h3>
@@ -280,6 +293,71 @@
         // Render perks
         renderPerks();
         Gamification.applyPerks();
+
+        // Render secrets
+        renderSecrets();
+
+        function renderSecrets() {
+          var section = document.getElementById("secrets-section");
+          if (!section) return;
+
+          var prof = Gamification.getProfile();
+          var claimedFlags = prof.claimedFlags || [];
+
+          // Show section if hacker mode enabled or flags claimed
+          var student = FirebaseSync.getStudent();
+          if (claimedFlags.length > 0) {
+            section.classList.remove("hidden");
+          } else if (student && student.classCode) {
+            FirebaseSync.getClassSettings(student.classCode).then(function(settings) {
+              if (settings.hackerModeEnabled) {
+                section.classList.remove("hidden");
+              }
+            });
+          }
+
+          // Render claimed flags
+          var list = document.getElementById("claimed-flags-list");
+          if (list) {
+            list.innerHTML = "";
+            if (claimedFlags.length === 0) {
+              list.innerHTML = '<p style="color: #555; font-size: 0.8rem;">No flags claimed yet. Explore the platform...</p>';
+            } else {
+              for (var f = 0; f < claimedFlags.length; f++) {
+                var item = document.createElement("div");
+                item.style.cssText = "padding: 0.25rem 0; font-size: 0.8rem; border-bottom: 1px solid #222;";
+                item.textContent = claimedFlags[f];
+                list.appendChild(item);
+              }
+            }
+          }
+        }
+
+        // Flag submission
+        document.getElementById("flag-submit-btn").addEventListener("click", function() {
+          var input = document.getElementById("flag-input");
+          var resultEl = document.getElementById("flag-result");
+          var flag = input.value.trim();
+          if (!flag) return;
+
+          var result = Gamification.claimFlag(flag);
+          resultEl.classList.remove("hidden");
+          if (result.success) {
+            resultEl.style.color = "#22c55e";
+            resultEl.textContent = "Flag claimed! +" + result.xp + " XP";
+            input.value = "";
+            renderSecrets();
+            // Show badge if earned
+            if (result.newBadges) {
+              for (var b = 0; b < result.newBadges.length; b++) {
+                if (result.newBadges[b]) Celebrations.showBadge(result.newBadges[b]);
+              }
+            }
+          } else {
+            resultEl.style.color = "#ef4444";
+            resultEl.textContent = result.message || "Invalid flag";
+          }
+        });
 
         function renderPerks() {
             var perks = Gamification.getLevelPerks();

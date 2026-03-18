@@ -625,7 +625,9 @@ var Gamification = (function () {
                 }
                 return filtered;
             })(),
-            allLevels: LEVELS
+            allLevels: LEVELS,
+            claimedFlags: data.claimedFlags || [],
+            completedChallenges: data.completedChallenges || {}
         };
     }
 
