@@ -460,6 +460,20 @@
                 </a>
             </div>
 
+            <!-- Quick Practice -->
+            <div id="quick-practice" class="hidden mt-6">
+                <a id="quick-practice-link" href="#" onclick="return false;" class="quick-practice-card block">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-lg">&#x26A1;</div>
+                        <div>
+                            <p class="text-sm font-bold" style="color:var(--text-primary)">Quick Practice</p>
+                            <p id="quick-practice-desc" class="text-xs" style="color:var(--text-muted)">Revise a random exercise</p>
+                        </div>
+                        <svg class="h-5 w-5 ml-auto" style="color:var(--text-muted)" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                    </div>
+                </a>
+            </div>
+
             <!-- Hacker Mode Card -->
             <div id="hacker-mode-card" class="hidden mt-8 max-w-2xl mx-auto">
               <a href="challenges.html" class="block hacker-card rounded-2xl p-6 text-center no-underline">
@@ -507,7 +521,7 @@
                 <h1 id="topics-year-title" class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100"></h1>
                 <p id="topics-year-subtitle" class="mt-1 text-sm text-slate-500 dark:text-slate-400"></p>
             </div>
-            <div id="topics-topic-list" class="space-y-5"></div>
+            <div id="topics-topic-list" class="topic-grid"></div>
             <div id="topics-empty" class="hidden text-center py-16">
                 <p class="text-slate-400 text-sm">No topics found for this year group.</p>
             </div>
@@ -537,6 +551,7 @@
                         <span id="primm-badge" class="primm-badge primm-predict">Predict</span>
                         <span id="exercise-number" class="text-xs text-slate-400">Exercise 1 of 4</span>
                     </div>
+                    <div id="step-dots" class="step-dots mt-3"></div>
                     <h1 id="exercise-title" class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Exercise Title</h1>
                     <p id="exercise-instructions" class="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line"></p>
                 </div>
@@ -1051,6 +1066,36 @@
                 Gamification.applyPerks();
             }
             checkHackerMode();
+
+            // Quick Practice
+            (function() {
+                if (typeof EXERCISES === 'undefined' || typeof Progress === 'undefined') return;
+                var candidates = [];
+                for (var yk in EXERCISES) {
+                    var topics = EXERCISES[yk].topics || [];
+                    for (var t = 0; t < topics.length; t++) {
+                        var topic = topics[t];
+                        var hasCompletion = false;
+                        var exs = topic.exercises || [];
+                        for (var e = 0; e < exs.length; e++) {
+                            if (Progress.isComplete(exs[e].id)) { hasCompletion = true; break; }
+                        }
+                        if (hasCompletion) {
+                            for (var e2 = 0; e2 < exs.length; e2++) {
+                                candidates.push({ exercise: exs[e2], year: yk, topic: topic.id });
+                            }
+                        }
+                    }
+                }
+                if (candidates.length === 0) return;
+                var pick = candidates[Math.floor(Math.random() * candidates.length)];
+                document.getElementById('quick-practice').classList.remove('hidden');
+                document.getElementById('quick-practice-desc').textContent = pick.exercise.title + ' \u2014 ' + pick.exercise.type;
+                document.getElementById('quick-practice-link').onclick = function() {
+                    App.navigate('exercise', { year: pick.year, topic: pick.topic, ex: pick.exercise.id });
+                    return false;
+                };
+            })();
         }
 
         function checkHackerMode() {
@@ -1515,11 +1560,31 @@
                 return;
             }
 
+            var firstIncompleteIdx = -1;
             for (var t = 0; t < topics.length; t++) {
                 var topic = topics[t];
                 var stats = (typeof Gamification !== 'undefined' ? Gamification : Progress).countForTopic(yearKey, topic.id);
                 var pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
                 var iconSvg = icons[topic.icon] || icons.list;
+
+                // PRIMM chips
+                var exs = topic.exercises || [];
+                var types = {};
+                for (var ec = 0; ec < exs.length; ec++) { types[exs[ec].type] = true; }
+                var typeNames = { predict: 'Predict', run: 'Run', investigate: 'Investigate', modify: 'Modify', make: 'Make' };
+                var chipsHtml = '<div class="flex gap-1 mt-2">';
+                for (var tp in types) { chipsHtml += '<span class="primm-chip primm-chip-' + tp + '" title="' + (typeNames[tp] || tp) + '"></span>'; }
+                chipsHtml += '</div>';
+
+                // Progress fraction
+                var doneCount = 0;
+                for (var e2 = 0; e2 < exs.length; e2++) {
+                    if (typeof Progress !== 'undefined' && Progress.isComplete(exs[e2].id)) doneCount++;
+                }
+                var progressHtml = '<p class="text-xs mt-1" style="color:var(--text-muted)">' + doneCount + '/' + exs.length + ' complete</p>';
+
+                // Track first incomplete topic for Up Next
+                if (firstIncompleteIdx === -1 && doneCount < exs.length) firstIncompleteIdx = t;
 
                 var exListHtml = '';
                 for (var e = 0; e < topic.exercises.length; e++) {
@@ -1547,6 +1612,8 @@
                             '<div class="flex-1 min-w-0">' +
                                 '<h2 class="text-lg font-semibold text-slate-900">' + topic.title + '</h2>' +
                                 '<p class="text-sm text-slate-500 mt-0.5">' + topic.description + '</p>' +
+                                chipsHtml +
+                                progressHtml +
                                 '<div class="flex items-center gap-3 mt-3">' +
                                     '<div class="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">' +
                                         '<div class="h-full rounded-full ' + c.barBg + ' transition-all" style="width: ' + pct + '%"></div>' +
@@ -1558,6 +1625,15 @@
                         '<div class="border-t border-slate-100 divide-y divide-slate-100 px-3 py-1">' + exListHtml + '</div>' +
                     '</div>';
                 container.insertAdjacentHTML('beforeend', cardHtml);
+            }
+
+            // Mark the first incomplete topic as "Up Next"
+            if (firstIncompleteIdx >= 0) {
+                var cards = container.children;
+                if (cards[firstIncompleteIdx]) {
+                    cards[firstIncompleteIdx].classList.add('topic-up-next', 'relative');
+                    cards[firstIncompleteIdx].insertAdjacentHTML('afterbegin', '<span class="up-next-badge">Up Next</span>');
+                }
             }
 
             updateHeaderStats();
@@ -1616,6 +1692,22 @@
             document.getElementById('exercise-number').textContent =
                 'Exercise ' + (exerciseIndex + 1) + ' of ' + allExercises.length + ' \u2014 ' + topic.title;
             document.title = exercise.title + ' \u2014 Python Lab';
+
+            // Step dots
+            var dotsContainer = document.getElementById('step-dots');
+            if (dotsContainer && allExercises) {
+                var dotsHtml = '';
+                for (var d = 0; d < allExercises.length; d++) {
+                    var dotEx = allExercises[d];
+                    var isCurrent = d === exerciseIndex;
+                    var isComplete = typeof Progress !== 'undefined' && Progress.isComplete(dotEx.id);
+                    var cls = 'step-dot';
+                    if (isCurrent) cls += ' step-current';
+                    else if (isComplete) cls += ' step-complete';
+                    dotsHtml += '<a href="#" onclick="App.navigate(\'exercise\', {year:\'' + yearKey + '\', topic:\'' + topicId + '\', ex:\'' + dotEx.id + '\'}); return false;" class="' + cls + '" title="' + dotEx.title + '"></a>';
+                }
+                dotsContainer.innerHTML = dotsHtml;
+            }
 
             var primmClasses = {
                 predict: 'primm-badge primm-predict', run: 'primm-badge primm-run',
