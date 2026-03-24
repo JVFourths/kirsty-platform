@@ -191,6 +191,114 @@ var Celebrations = (function () {
         }
     }
 
+    /* ── Spin the Wheel (topic completion bonus) ── */
+    function showSpinWheel(topicId, onResult) {
+        var segments = [
+            { xp: 5, color: '#6366f1' },
+            { xp: 10, color: '#22c55e' },
+            { xp: 15, color: '#3b82f6' },
+            { xp: 20, color: '#f59e0b' },
+            { xp: 30, color: '#ec4899' },
+            { xp: 50, color: '#ef4444' }
+        ];
+        var segAngle = 360 / segments.length;
+
+        var overlay = document.createElement('div');
+        overlay.className = 'wheel-overlay';
+
+        // Build wheel segments using conic-gradient
+        var gradientParts = [];
+        for (var i = 0; i < segments.length; i++) {
+            gradientParts.push(segments[i].color + ' ' + (i * segAngle) + 'deg ' + ((i + 1) * segAngle) + 'deg');
+        }
+
+        overlay.innerHTML =
+            '<div class="wheel-container">' +
+            '<p class="wheel-title">Spin for Bonus XP!</p>' +
+            '<div class="wheel" style="position:relative">' +
+            '<div class="wheel-pointer"></div>' +
+            '<div class="wheel-inner" style="background:conic-gradient(' + gradientParts.join(',') + ');border-radius:50%;width:100%;height:100%;position:relative;">' +
+            segments.map(function(seg, idx) {
+                var angle = segAngle * idx + segAngle / 2;
+                var rad = angle * Math.PI / 180;
+                var x = 50 + 30 * Math.sin(rad);
+                var y = 50 - 30 * Math.cos(rad);
+                return '<span style="position:absolute;left:' + x + '%;top:' + y + '%;transform:translate(-50%,-50%);color:white;font-weight:800;font-size:0.8rem;text-shadow:0 1px 3px rgba(0,0,0,0.5)">+' + seg.xp + '</span>';
+            }).join('') +
+            '</div></div>' +
+            '<button class="wheel-spin-btn" id="wheel-spin-btn">SPIN!</button>' +
+            '<div class="wheel-result" id="wheel-result"></div>' +
+            '</div>';
+
+        document.body.appendChild(overlay);
+
+        var inner = overlay.querySelector('.wheel-inner');
+        var btn = document.getElementById('wheel-spin-btn');
+        var result = document.getElementById('wheel-result');
+
+        btn.addEventListener('click', function() {
+            btn.disabled = true;
+            // Pick random segment
+            var winIdx = Math.floor(Math.random() * segments.length);
+            // Calculate rotation: multiple full spins + land on winning segment
+            var targetAngle = 360 * 5 + (360 - (segAngle * winIdx + segAngle / 2));
+            inner.style.transform = 'rotate(' + targetAngle + 'deg)';
+
+            setTimeout(function() {
+                var won = segments[winIdx].xp;
+                result.textContent = '+' + won + ' XP!';
+                result.classList.add('visible');
+                if (typeof onResult === 'function') onResult(won);
+                confetti();
+
+                // Auto-close after 3 seconds
+                setTimeout(function() {
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                }, 3000);
+            }, 4200);
+        });
+    }
+
+    /* ── Loot Chest (weekly mission reward) ── */
+    function showChestOpen(onResult) {
+        var xpOptions = [20, 25, 30, 35, 40, 50, 60, 75, 100];
+        var won = xpOptions[Math.floor(Math.random() * xpOptions.length)];
+
+        var overlay = document.createElement('div');
+        overlay.className = 'chest-overlay';
+        overlay.innerHTML =
+            '<div class="chest-container">' +
+            '<div class="chest-icon" id="chest-icon" role="img" aria-label="treasure chest">\uD83C\uDF81</div>' +
+            '<p class="chest-title">Weekly Chest!</p>' +
+            '<div class="chest-result" id="chest-result" style="opacity:0"></div>' +
+            '<button class="chest-close-btn" id="chest-close-btn" style="display:none">Brilliant!</button>' +
+            '</div>';
+
+        document.body.appendChild(overlay);
+
+        // Open animation sequence
+        setTimeout(function() {
+            var icon = document.getElementById('chest-icon');
+            icon.textContent = '\uD83D\uDCE6'; // open box
+            icon.classList.add('opened');
+
+            setTimeout(function() {
+                document.getElementById('chest-result').textContent = '+' + won + ' XP!';
+                document.getElementById('chest-result').style.opacity = '1';
+                document.getElementById('chest-close-btn').style.display = 'inline-block';
+                if (typeof onResult === 'function') onResult(won);
+                confetti();
+            }, 800);
+        }, 600);
+
+        // Close button
+        overlay.addEventListener('click', function(e) {
+            if (e.target.id === 'chest-close-btn' || e.target === overlay) {
+                overlay.parentNode.removeChild(overlay);
+            }
+        });
+    }
+
     return {
         showXP: showXP,
         confetti: confetti,
@@ -198,7 +306,9 @@ var Celebrations = (function () {
         showBadge: showBadge,
         showStreak: showStreak,
         showLuckyXP: showLuckyXP,
-        celebrate: celebrate
+        celebrate: celebrate,
+        showSpinWheel: showSpinWheel,
+        showChestOpen: showChestOpen
     };
 
 })();
