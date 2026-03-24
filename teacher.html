@@ -46,6 +46,8 @@
         /* Struggling student highlight */
         .row-struggling { background: #fef2f2 !important; }
         .row-struggling:hover { background: #fee2e2 !important; }
+        .dark .row-struggling { background: rgba(127, 29, 29, 0.2) !important; }
+        .dark .row-struggling:hover { background: rgba(127, 29, 29, 0.3) !important; }
 
         /* Weekly chart bars */
         .chart-bar {
@@ -86,10 +88,10 @@
         }
     </style>
 </head>
-<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased">
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans antialiased">
 
     <!-- Header -->
-    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50 no-print">
+    <header class="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg sticky top-0 z-50 no-print">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-14 items-center justify-between">
                 <div class="flex items-center gap-2.5">
@@ -97,14 +99,15 @@
                         Py
                     </div>
                     <span class="text-lg font-semibold tracking-tight">Python Lab</span>
-                    <span class="rounded-full bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5">Teacher</span>
+                    <span class="rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-semibold px-2 py-0.5">Teacher</span>
                 </div>
                 <div class="flex items-center gap-3">
+                    <button onclick="ThemeToggle.toggle()" class="rounded-lg p-1.5 text-lg leading-none hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="Toggle dark mode"><span class="theme-toggle-icon"></span></button>
                     <span id="live-indicator" class="hidden items-center gap-1.5 text-xs text-slate-500">
                         <span class="live-dot"></span> Live
                     </span>
                     <button onclick="window.print()" title="Print report"
-                        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all no-print">
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-all no-print">
                         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" /></svg>
                         Print
                     </button>
@@ -121,15 +124,15 @@
 
     <main class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
 
-        <h1 class="text-2xl font-bold tracking-tight text-slate-900 mb-2">Student Progress Dashboard</h1>
-        <p class="text-sm text-slate-500 mb-6">View your students' XP, levels, streaks, and completed exercises across all classes.</p>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-2">Student Progress Dashboard</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">View your students' XP, levels, streaks, and completed exercises across all classes.</p>
 
         <!-- Tabs -->
-        <div class="flex gap-1 border-b border-slate-200 mb-6 no-print">
-            <button class="tab-btn active px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="progress">Progress</button>
-            <button class="tab-btn px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="assignments">Assignments</button>
-            <button class="tab-btn px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="classes">Manage Classes</button>
-            <button class="tab-btn px-4 py-2 text-sm text-slate-600 transition-colors" data-tab="feedback">Feedback</button>
+        <div class="flex gap-1 border-b border-slate-200 dark:border-slate-700 mb-6 no-print">
+            <button class="tab-btn active px-4 py-2 text-sm text-slate-600 dark:text-slate-300 transition-colors" data-tab="progress">Progress</button>
+            <button class="tab-btn px-4 py-2 text-sm text-slate-600 dark:text-slate-300 transition-colors" data-tab="assignments">Assignments</button>
+            <button class="tab-btn px-4 py-2 text-sm text-slate-600 dark:text-slate-300 transition-colors" data-tab="classes">Manage Classes</button>
+            <button class="tab-btn px-4 py-2 text-sm text-slate-600 dark:text-slate-300 transition-colors" data-tab="feedback">Feedback</button>
         </div>
 
         <!-- ============================================================
@@ -140,20 +143,20 @@
             <!-- Class code selector -->
             <div class="flex flex-col sm:flex-row gap-3 mb-6 no-print">
                 <div class="flex-1">
-                    <label for="class-select" class="block text-sm font-medium text-slate-700 mb-1">Select a class</label>
+                    <label for="class-select" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Select a class</label>
                     <select id="class-select"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none transition-all">
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm bg-white dark:bg-slate-700 dark:text-slate-100 focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none transition-all">
                         <option value="">Loading classes...</option>
                     </select>
                 </div>
                 <div class="flex items-end gap-2">
                     <button id="export-csv-btn" disabled
-                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none">
+                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                         Export CSV
                     </button>
                     <button id="refresh-btn"
-                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all active:scale-[0.98]">
+                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-all active:scale-[0.98]">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
                         </svg>
@@ -163,14 +166,14 @@
             </div>
 
             <!-- Double XP Toggle -->
-            <div id="double-xp-section" class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl mb-6">
+            <div id="double-xp-section" class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl mb-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <h4 class="font-semibold text-gray-800">⚡ Double XP</h4>
-                  <p class="text-sm text-gray-600">All students earn double XP</p>
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-200">⚡ Double XP</h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">All students earn double XP</p>
                 </div>
                 <div class="flex items-center gap-2">
-                  <select id="double-xp-duration" class="text-sm border rounded px-2 py-1">
+                  <select id="double-xp-duration" class="text-sm border dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded px-2 py-1">
                     <option value="60">1 hour</option>
                     <option value="45">Rest of lesson (45m)</option>
                     <option value="0">Until I turn it off</option>
@@ -183,11 +186,11 @@
             </div>
 
             <!-- Topic Unlock Override -->
-            <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl mb-6">
+            <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl mb-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <h4 class="font-semibold text-gray-800">🔓 Topic Unlock Override</h4>
-                  <p class="text-sm text-gray-600">Unlock all topics for the entire class</p>
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-200">🔓 Topic Unlock Override</h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Unlock all topics for the entire class</p>
                 </div>
                 <button id="unlock-override-btn" onclick="toggleTopicOverride()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition">
                   Unlock All
@@ -197,13 +200,13 @@
 
             <!-- Class Social Settings -->
             <div id="class-settings-section" class="mt-6 space-y-4">
-              <h3 class="text-lg font-bold text-gray-800">Class Settings</h3>
+              <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">Class Settings</h3>
 
               <!-- Feed Toggle -->
-              <div class="p-4 bg-white border rounded-xl flex items-center justify-between">
+              <div class="p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl flex items-center justify-between">
                 <div>
-                  <h4 class="font-semibold text-gray-800">📣 Class Activity Feed</h4>
-                  <p class="text-sm text-gray-600">Students see classmates' achievements</p>
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-200">📣 Class Activity Feed</h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Students see classmates' achievements</p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" id="feed-toggle" onchange="updateClassSetting('feedEnabled', this.checked)" class="sr-only peer">
@@ -212,11 +215,11 @@
               </div>
 
               <!-- Leaderboard Toggle -->
-              <div class="p-4 bg-white border rounded-xl">
+              <div class="p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl">
                 <div class="flex items-center justify-between">
                   <div>
-                    <h4 class="font-semibold text-gray-800">🏆 Weekly Leaderboard</h4>
-                    <p class="text-sm text-gray-600">Top 5 students by weekly XP</p>
+                    <h4 class="font-semibold text-gray-800 dark:text-gray-200">🏆 Weekly Leaderboard</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Top 5 students by weekly XP</p>
                   </div>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="leaderboard-toggle" onchange="updateClassSetting('leaderboardEnabled', this.checked)" class="sr-only peer">
@@ -224,7 +227,7 @@
                   </label>
                 </div>
                 <div id="leaderboard-anon-option" class="mt-3 hidden">
-                  <label class="flex items-center gap-2 text-sm text-gray-600">
+                  <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <input type="checkbox" id="leaderboard-anon" onchange="updateClassSetting('leaderboardAnonymous', this.checked)">
                     Anonymous mode (hide student names)
                   </label>
@@ -232,11 +235,11 @@
               </div>
 
               <!-- Hacker Mode Toggle -->
-              <div class="p-4 bg-white border rounded-xl">
+              <div class="p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl">
                 <div class="flex items-center justify-between">
                   <div>
-                    <h4 class="font-semibold text-gray-800">💻 Hacker Mode</h4>
-                    <p class="text-sm text-gray-600">Enable CTF challenges and Easter eggs</p>
+                    <h4 class="font-semibold text-gray-800 dark:text-gray-200">💻 Hacker Mode</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Enable CTF challenges and Easter eggs</p>
                   </div>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="hacker-mode-toggle" onchange="updateClassSetting('hackerModeEnabled', this.checked)" class="sr-only peer">
@@ -246,8 +249,8 @@
               </div>
 
               <!-- Class Goal -->
-              <div class="p-4 bg-white border rounded-xl">
-                <h4 class="font-semibold text-gray-800 mb-3">🎯 Class Goal</h4>
+              <div class="p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl">
+                <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">🎯 Class Goal</h4>
                 <div id="current-goal-display" class="hidden mb-4 p-3 bg-blue-50 rounded-lg">
                   <p id="current-goal-text" class="font-medium text-gray-700"></p>
                   <div class="h-2 bg-blue-100 rounded-full mt-2 overflow-hidden">
@@ -260,14 +263,14 @@
                 </div>
                 <div id="goal-form">
                   <div class="flex gap-2 mb-2">
-                    <select id="goal-metric" class="flex-1 border rounded px-3 py-2 text-sm">
+                    <select id="goal-metric" class="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded px-3 py-2 text-sm">
                       <option value="exercises_completed">Exercises completed</option>
                       <option value="xp_earned">XP earned</option>
                     </select>
-                    <input type="number" id="goal-target" placeholder="Target" class="w-24 border rounded px-3 py-2 text-sm">
+                    <input type="number" id="goal-target" placeholder="Target" class="w-24 border dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded px-3 py-2 text-sm">
                   </div>
                   <div class="flex gap-2">
-                    <input type="date" id="goal-deadline" class="flex-1 border rounded px-3 py-2 text-sm">
+                    <input type="date" id="goal-deadline" class="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded px-3 py-2 text-sm">
                     <button onclick="setGoal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Set Goal</button>
                   </div>
                 </div>
@@ -275,7 +278,7 @@
             </div>
 
             <!-- Struggling students alert -->
-            <div id="struggling-alert" class="hidden mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+            <div id="struggling-alert" class="hidden mb-6 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3">
                 <div class="flex items-center gap-2 text-sm font-semibold text-red-700 mb-1">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
                     Students needing attention
@@ -304,26 +307,26 @@
             </div>
 
             <!-- Weekly activity chart -->
-            <div id="weekly-chart-wrap" class="hidden rounded-2xl border border-slate-200 bg-white shadow-sm p-5 mb-6">
-                <h3 class="text-sm font-semibold text-slate-700 mb-3">Weekly Activity (exercises completed)</h3>
+            <div id="weekly-chart-wrap" class="hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-5 mb-6">
+                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Weekly Activity (exercises completed)</h3>
                 <div class="flex items-end gap-1 h-32" id="weekly-chart"></div>
                 <div class="flex justify-between text-[10px] text-slate-400 mt-1 px-0.5" id="weekly-labels"></div>
             </div>
 
             <!-- Student table -->
-            <div id="student-table-wrap" class="hidden rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+            <div id="student-table-wrap" class="hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden mb-6">
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm" id="student-table">
                         <thead>
-                            <tr class="border-b border-slate-100 bg-slate-50/50">
-                                <th class="text-left px-4 py-3 font-semibold text-slate-600 sortable" data-sort="rank">#</th>
-                                <th class="text-left px-4 py-3 font-semibold text-slate-600 sortable" data-sort="nickname">Student</th>
-                                <th class="text-left px-4 py-3 font-semibold text-slate-600 sortable" data-sort="level">Level</th>
-                                <th class="text-right px-4 py-3 font-semibold text-slate-600 sortable sort-desc" data-sort="totalXP">XP</th>
-                                <th class="text-right px-4 py-3 font-semibold text-slate-600 sortable" data-sort="totalExercises">Exercises</th>
-                                <th class="text-center px-4 py-3 font-semibold text-slate-600 sortable" data-sort="currentStreak">Streak</th>
-                                <th class="text-right px-4 py-3 font-semibold text-slate-600 sortable" data-sort="badges">Badges</th>
-                                <th class="text-right px-4 py-3 font-semibold text-slate-600 sortable" data-sort="updatedAt">Last Active</th>
+                            <tr class="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                                <th class="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-400 sortable" data-sort="rank">#</th>
+                                <th class="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-400 sortable" data-sort="nickname">Student</th>
+                                <th class="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-400 sortable" data-sort="level">Level</th>
+                                <th class="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-400 sortable sort-desc" data-sort="totalXP">XP</th>
+                                <th class="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-400 sortable" data-sort="totalExercises">Exercises</th>
+                                <th class="text-center px-4 py-3 font-semibold text-slate-600 dark:text-slate-400 sortable" data-sort="currentStreak">Streak</th>
+                                <th class="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-400 sortable" data-sort="badges">Badges</th>
+                                <th class="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-400 sortable" data-sort="updatedAt">Last Active</th>
                             </tr>
                         </thead>
                         <tbody id="student-tbody">
@@ -351,7 +354,7 @@
                 <p class="text-slate-500 text-sm font-medium">Firebase not configured yet</p>
                 <p class="text-slate-400 text-xs mt-2 max-w-md mx-auto">
                     To use the teacher dashboard, you need to set up Firebase.
-                    Open <code class="bg-slate-100 rounded px-1">js/firebase-sync.js</code> and replace the placeholder config with your Firebase project details.
+                    Open <code class="bg-slate-100 dark:bg-slate-700 rounded px-1">js/firebase-sync.js</code> and replace the placeholder config with your Firebase project details.
                 </p>
             </div>
         </div>
@@ -360,29 +363,29 @@
              TAB 2: ASSIGNMENTS
              ============================================================ -->
         <div id="tab-assignments" class="hidden">
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-                <h3 class="text-base font-bold text-slate-900 mb-4">Create Assignment</h3>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-6 mb-6">
+                <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-4">Create Assignment</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Class</label>
-                        <select id="assign-class" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white outline-none">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Class</label>
+                        <select id="assign-class" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm bg-white dark:bg-slate-700 dark:text-slate-100 outline-none">
                             <option value="">Select class...</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Due date</label>
-                        <input id="assign-due" type="date" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white outline-none">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Due date</label>
+                        <input id="assign-due" type="date" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm bg-white dark:bg-slate-700 dark:text-slate-100 outline-none">
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Goal description</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Goal description</label>
                     <input id="assign-desc" type="text" placeholder="e.g. Complete Year 7 Variables topic" maxlength="100"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none">
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 outline-none">
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Target exercises (comma-separated IDs, or topic ID)</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target exercises (comma-separated IDs, or topic ID)</label>
                     <input id="assign-target" type="text" placeholder="e.g. y7-variables or y7-var-1,y7-var-2" maxlength="200"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-mono outline-none">
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-mono dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 outline-none">
                 </div>
                 <button id="assign-save-btn"
                     class="rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-brand-700 hover:to-brand-800 active:scale-[0.98]">
@@ -402,25 +405,25 @@
              ============================================================ -->
         <div id="tab-classes" class="hidden">
             <!-- How Student Login Works -->
-            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-6 mb-6">
+            <div class="rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-6 mb-6">
                 <div class="flex items-start gap-3">
                     <span class="text-2xl mt-0.5">🔑</span>
                     <div>
-                        <h3 class="text-base font-bold text-slate-900 mb-2">How Student Login Works</h3>
-                        <p class="text-sm text-slate-700 mb-3">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">How Student Login Works</h3>
+                        <p class="text-sm text-slate-700 dark:text-slate-300 mb-3">
                             Each student gets a unique login code (e.g. <span class="font-mono font-semibold bg-white px-1.5 py-0.5 rounded">7A-X4K2</span>) that replaces the need for emails or passwords. This keeps us fully GDPR-compliant — no personal data is collected.
                         </p>
-                        <div class="grid sm:grid-cols-2 gap-3 text-sm text-slate-600">
-                            <div class="bg-white rounded-xl p-3">
-                                <p class="font-semibold text-slate-800 mb-1">Setting up a class</p>
+                        <div class="grid sm:grid-cols-2 gap-3 text-sm text-slate-600 dark:text-slate-400">
+                            <div class="bg-white dark:bg-slate-800 rounded-xl p-3">
+                                <p class="font-semibold text-slate-800 dark:text-slate-200 mb-1">Setting up a class</p>
                                 <ol class="list-decimal list-inside space-y-1">
                                     <li>Create a class code below (e.g. "7A-CS")</li>
                                     <li>Generate student codes — individually or in bulk</li>
                                     <li>Hand out the codes (print the list or read them out)</li>
                                 </ol>
                             </div>
-                            <div class="bg-white rounded-xl p-3">
-                                <p class="font-semibold text-slate-800 mb-1">For students</p>
+                            <div class="bg-white dark:bg-slate-800 rounded-xl p-3">
+                                <p class="font-semibold text-slate-800 dark:text-slate-200 mb-1">For students</p>
                                 <ol class="list-decimal list-inside space-y-1">
                                     <li>Go to the login page and enter their code</li>
                                     <li>Choose a nickname on first login</li>
@@ -435,18 +438,18 @@
                 </div>
             </div>
 
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-                <h3 class="text-base font-bold text-slate-900 mb-4">Create Class Code</h3>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-6 mb-6">
+                <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-4">Create Class Code</h3>
                 <div class="flex flex-col sm:flex-row gap-3">
                     <div class="flex-1">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Class code</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Class code</label>
                         <input id="new-class-code" type="text" maxlength="10" placeholder="e.g. 7A-CS" autocomplete="off"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-mono uppercase outline-none">
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 px-4 py-2.5 text-sm font-mono uppercase outline-none">
                     </div>
                     <div class="flex-1">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Label (optional)</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Label (optional)</label>
                         <input id="new-class-label" type="text" maxlength="40" placeholder="e.g. Year 7 Set A" autocomplete="off"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none">
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 px-4 py-2.5 text-sm outline-none">
                     </div>
                     <div class="flex items-end">
                         <button id="create-class-btn"
@@ -459,12 +462,12 @@
 
             <!-- Student Code Management -->
             <div id="student-codes-section" class="hidden mb-6">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-                    <h3 class="text-base font-bold text-slate-900 mb-4">Generate Student Codes</h3>
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-6 mb-6">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-4">Generate Student Codes</h3>
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Select class</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Select class</label>
                         <select id="student-codes-class-select"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white font-mono uppercase outline-none">
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm bg-white dark:bg-slate-700 dark:text-slate-100 font-mono uppercase outline-none">
                             <option value="">Choose a class...</option>
                         </select>
                     </div>
@@ -472,10 +475,10 @@
                         <!-- Bulk generate -->
                         <div class="flex flex-col sm:flex-row gap-3">
                             <div class="flex-1">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Bulk generate</label>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Bulk generate</label>
                                 <div class="flex gap-2">
                                     <input id="bulk-count" type="number" min="1" max="50" value="10" placeholder="Number"
-                                        class="w-24 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none">
+                                        class="w-24 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 px-3 py-2.5 text-sm outline-none">
                                     <button id="bulk-generate-btn"
                                         class="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-emerald-600 hover:to-teal-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
                                         Generate
@@ -484,10 +487,10 @@
                             </div>
                             <!-- Single add -->
                             <div class="flex-1">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Add single student</label>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Add single student</label>
                                 <div class="flex gap-2">
                                     <input id="single-nickname" type="text" maxlength="20" placeholder="Nickname (optional)"
-                                        class="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none">
+                                        class="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 px-3 py-2.5 text-sm outline-none">
                                     <button id="single-add-btn"
                                         class="rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-brand-700 hover:to-brand-800 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
                                         Add Student
@@ -500,9 +503,9 @@
                 </div>
 
                 <!-- Student Codes Table -->
-                <div id="student-codes-table-wrap" class="hidden rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-                    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                        <h4 class="text-sm font-semibold text-slate-700">Student Codes</h4>
+                <div id="student-codes-table-wrap" class="hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden mb-6">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                        <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Student Codes</h4>
                         <button id="print-codes-btn"
                             class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all">
                             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" /></svg>
@@ -512,12 +515,12 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="border-b border-slate-100 bg-slate-50/50">
-                                    <th class="text-left px-4 py-3 font-semibold text-slate-600">Code</th>
-                                    <th class="text-left px-4 py-3 font-semibold text-slate-600">Nickname</th>
-                                    <th class="text-right px-4 py-3 font-semibold text-slate-600">XP</th>
-                                    <th class="text-right px-4 py-3 font-semibold text-slate-600">Last Active</th>
-                                    <th class="text-right px-4 py-3 font-semibold text-slate-600">Actions</th>
+                                <tr class="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                                    <th class="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-400">Code</th>
+                                    <th class="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-400">Nickname</th>
+                                    <th class="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-400">XP</th>
+                                    <th class="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-400">Last Active</th>
+                                    <th class="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-400">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="student-codes-tbody"></tbody>
@@ -537,13 +540,13 @@
              TAB 4: FEEDBACK
              ============================================================ -->
         <div id="tab-feedback" class="hidden">
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-                <h3 class="text-base font-bold text-slate-900 mb-2">Send Feedback</h3>
-                <p class="text-sm text-slate-500 mb-4">Let us know what's working, what isn't, or what you'd like to see next. Your feedback goes directly to the development team.</p>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-6 mb-6">
+                <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">Send Feedback</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Let us know what's working, what isn't, or what you'd like to see next. Your feedback goes directly to the development team.</p>
                 <div class="space-y-3">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                        <select id="feedback-category" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white outline-none">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                        <select id="feedback-category" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm bg-white dark:bg-slate-700 dark:text-slate-100 outline-none">
                             <option value="general">General feedback</option>
                             <option value="bug">Bug report</option>
                             <option value="feature">Feature request</option>
@@ -552,8 +555,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Your feedback</label>
-                        <textarea id="feedback-text" rows="5" placeholder="Tell us what you think..." class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none resize-y"></textarea>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Your feedback</label>
+                        <textarea id="feedback-text" rows="5" placeholder="Tell us what you think..." class="w-full rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 px-4 py-3 text-sm outline-none resize-y"></textarea>
                     </div>
                     <div class="flex items-center justify-between">
                         <span id="feedback-status" class="text-sm"></span>
@@ -565,8 +568,8 @@
             </div>
 
             <!-- Previous feedback -->
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-                <h3 class="text-base font-bold text-slate-900 mb-4">Your Previous Feedback</h3>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-6">
+                <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-4">Your Previous Feedback</h3>
                 <div id="feedback-list" class="space-y-3">
                     <p class="text-sm text-slate-400">Loading...</p>
                 </div>
@@ -581,6 +584,7 @@
 
     <script src="data/exercises.js"></script>
     <script src="js/firebase-sync.js"></script>
+    <script src="js/theme.js"></script>
 
     <script>
     function toggleDoubleXP() {

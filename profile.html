@@ -32,10 +32,10 @@
     <link rel="stylesheet" href="css/platform.css">
     <link rel="stylesheet" href="css/gamification.css">
 </head>
-<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased">
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans antialiased">
 
     <!-- Header -->
-    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50">
+    <header class="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg sticky top-0 z-50">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-14 items-center justify-between">
                 <a href="index.html" class="flex items-center gap-2.5">
@@ -44,12 +44,15 @@
                     </div>
                     <span class="text-lg font-semibold tracking-tight">Python Lab</span>
                 </a>
-                <a href="index.html" class="text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors flex items-center gap-1">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                    </svg>
-                    Home
-                </a>
+                <div class="flex items-center gap-2">
+                    <button onclick="ThemeToggle.toggle()" class="rounded-lg p-1.5 text-lg leading-none hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="Toggle dark mode"><span class="theme-toggle-icon"></span></button>
+                    <a href="index.html" class="text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                        </svg>
+                        Home
+                    </a>
+                </div>
             </div>
         </div>
     </header>
@@ -63,7 +66,7 @@
                 <div id="profile-icon" class="text-5xl leading-none"></div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 id="profile-nickname" class="text-2xl font-bold tracking-tight text-slate-900"></h1>
+                        <h1 id="profile-nickname" class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100"></h1>
                         <button id="edit-name-btn" class="text-slate-400 hover:text-slate-600 transition-colors" title="Change nickname">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
@@ -84,14 +87,14 @@
 
         <!-- Nickname edit modal (hidden) -->
         <div id="nickname-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div class="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full mx-4">
-                <h3 class="text-lg font-bold text-slate-900 mb-3">Choose your nickname</h3>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl max-w-sm w-full mx-4">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-3">Choose your nickname</h3>
                 <input id="nickname-input" type="text" maxlength="20" placeholder="Enter a nickname..."
-                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none">
+                    class="w-full rounded-lg border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 px-3 py-2 text-sm focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 outline-none">
                 <p class="text-xs text-slate-400 mt-1">This is shown on the leaderboard. Max 20 characters.</p>
                 <div class="flex gap-2 mt-4">
                     <button id="nickname-save" class="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">Save</button>
-                    <button id="nickname-cancel" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button id="nickname-cancel" class="rounded-lg border border-slate-200 dark:border-slate-600 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">Cancel</button>
                 </div>
             </div>
         </div>
@@ -120,13 +123,13 @@
         </div>
 
         <!-- Streak info -->
-        <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex items-center gap-3 mb-4">
+        <div class="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/20 p-4 flex items-center gap-3 mb-4">
             <span class="text-2xl">🔥</span>
             <div>
-                <p class="text-sm font-semibold text-amber-900">
+                <p class="text-sm font-semibold text-amber-900 dark:text-amber-300">
                     <span id="streak-message">Start your streak today!</span>
                 </p>
-                <p class="text-xs text-amber-700 mt-0.5">
+                <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
                     Longest streak: <strong id="longest-streak">0</strong> days
                     &nbsp;&middot;&nbsp;
                     <strong id="streak-recovery">Recovery available</strong>
@@ -136,13 +139,13 @@
 
         <!-- Streak Calendar -->
         <div class="mb-10">
-          <h4 class="text-sm font-semibold text-gray-600 mb-2">Last 30 Days</h4>
+          <h4 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Last 30 Days</h4>
           <div id="streak-calendar" class="flex gap-1 flex-wrap"></div>
         </div>
 
         <!-- Badges section -->
         <div class="mb-10">
-            <h2 class="text-lg font-bold text-slate-900 mb-4">Badges</h2>
+            <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Badges</h2>
             <div id="badge-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                 <!-- Filled by JS -->
             </div>
@@ -150,7 +153,7 @@
 
         <!-- Secrets Section -->
         <div id="secrets-section" class="hidden mt-8">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">Secrets</h3>
+            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">Secrets</h3>
             <div class="secrets-section">
                 <div class="flex gap-2 mb-4">
                     <input type="text" id="flag-input" placeholder="Enter flag code..." class="flex-1 rounded-lg px-3 py-2 text-sm">
@@ -163,13 +166,13 @@
 
         <!-- Customise Section -->
         <div class="mt-8 mb-10">
-          <h3 class="text-lg font-bold text-gray-800 mb-4">🎨 Customise</h3>
+          <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">🎨 Customise</h3>
           <div id="perk-list" class="space-y-3"></div>
         </div>
 
         <!-- Level progression -->
         <div class="mb-10">
-            <h2 class="text-lg font-bold text-slate-900 mb-4">Level Progression</h2>
+            <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Level Progression</h2>
             <div id="level-list" class="space-y-2">
                 <!-- Filled by JS -->
             </div>
@@ -177,7 +180,7 @@
 
     </main>
 
-    <footer class="border-t border-slate-200 mt-auto">
+    <footer class="border-t border-slate-200 dark:border-slate-700 mt-auto">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
             <p class="text-center text-sm text-slate-400">Python Lab — Part of the Kirsty Class Planner</p>
         </div>
@@ -188,6 +191,7 @@
     <script src="js/gamification.js"></script>
     <script src="js/celebrations.js"></script>
     <script src="js/firebase-sync.js"></script>
+    <script src="js/theme.js"></script>
 
     <script>
     (function () {

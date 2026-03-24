@@ -32,10 +32,10 @@
     <link rel="stylesheet" href="css/platform.css">
     <link rel="stylesheet" href="css/gamification.css">
 </head>
-<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased">
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans antialiased">
 
     <!-- Header -->
-    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50">
+    <header class="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg sticky top-0 z-50">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-14 items-center justify-between">
                 <a href="index.html" class="flex items-center gap-2.5">
@@ -44,12 +44,15 @@
                     </div>
                     <span class="text-lg font-semibold tracking-tight">Python Lab</span>
                 </a>
-                <a href="index.html" class="text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors flex items-center gap-1">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                    </svg>
-                    All Year Groups
-                </a>
+                <div class="flex items-center gap-2">
+                    <button onclick="ThemeToggle.toggle()" class="rounded-lg p-1.5 text-lg leading-none hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="Toggle dark mode"><span class="theme-toggle-icon"></span></button>
+                    <a href="index.html" class="text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                        </svg>
+                        All Year Groups
+                    </a>
+                </div>
             </div>
         </div>
     </header>
@@ -58,8 +61,8 @@
 
         <!-- Year heading (filled by JS) -->
         <div class="mb-8">
-            <h1 id="year-title" class="text-2xl font-bold tracking-tight text-slate-900"></h1>
-            <p id="year-subtitle" class="mt-1 text-sm text-slate-500"></p>
+            <h1 id="year-title" class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100"></h1>
+            <p id="year-subtitle" class="mt-1 text-sm text-slate-500 dark:text-slate-400"></p>
         </div>
 
         <!-- Topic cards container -->
@@ -69,13 +72,13 @@
 
         <!-- Empty state -->
         <div id="empty-state" class="hidden text-center py-16">
-            <p class="text-slate-400 text-sm">No topics found for this year group.</p>
+            <p class="text-slate-400 dark:text-slate-500 text-sm">No topics found for this year group.</p>
             <a href="index.html" class="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700">Go back</a>
         </div>
 
     </main>
 
-    <footer class="border-t border-slate-200 mt-auto">
+    <footer class="border-t border-slate-200 dark:border-slate-700 mt-auto">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
             <p class="text-center text-sm text-slate-400">Python Lab — Part of the Kirsty Class Planner</p>
         </div>
@@ -85,6 +88,7 @@
     <script src="js/progress.js"></script>
     <script src="js/gamification.js"></script>
     <script src="js/firebase-sync.js"></script>
+    <script src="js/theme.js"></script>
     <script>
     (function () {
         // Record visit and apply perks
@@ -179,9 +183,9 @@
 
                     exListHtml +=
                         '<a href="exercise.html?year=' + yearKey + '&topic=' + topic.id + '&ex=' + ex.id + '"' +
-                        '   class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 ' + doneClass + '">' +
+                        '   class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 ' + doneClass + '">' +
                             doneIcon +
-                            '<span class="flex-1 text-sm text-slate-700">' + ex.title + '</span>' +
+                            '<span class="flex-1 text-sm text-slate-700 dark:text-slate-300">' + ex.title + '</span>' +
                             '<span class="' + (primmClasses[ex.type] || '') + '">' + (primmLabels[ex.type] || ex.type) + '</span>' +
                         '</a>';
                 }
@@ -203,14 +207,14 @@
 
                 // Topic card
                 var cardHtml =
-                    '<div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-all ' + c.hoverBorder + lockedClass + '">' +
+                    '<div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden transition-all ' + c.hoverBorder + lockedClass + '">' +
                         '<div class="p-6 flex items-start gap-4">' +
                             '<div class="flex h-11 w-11 items-center justify-center rounded-xl ' + c.bg + ' ' + c.text + ' flex-shrink-0">' +
                                 '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">' + iconSvg + '</svg>' +
                             '</div>' +
                             '<div class="flex-1 min-w-0">' +
-                                '<h2 class="text-lg font-semibold text-slate-900">' + topic.title + '</h2>' +
-                                '<p class="text-sm text-slate-500 mt-0.5">' + topic.description + '</p>' +
+                                '<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">' + topic.title + '</h2>' +
+                                '<p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">' + topic.description + '</p>' +
                                 '<div class="flex items-center gap-3 mt-3">' +
                                     '<div class="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">' +
                                         '<div class="h-full rounded-full ' + c.barBg + ' transition-all" style="width: ' + pct + '%"></div>' +
@@ -219,7 +223,7 @@
                                 '</div>' +
                             '</div>' +
                         '</div>' +
-                        (exListHtml ? '<div class="border-t border-slate-100 divide-y divide-slate-100 px-3 py-1">' + exListHtml + '</div>' : '') +
+                        (exListHtml ? '<div class="border-t border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 px-3 py-1">' + exListHtml + '</div>' : '') +
                         lockHtml +
                     '</div>';
 
