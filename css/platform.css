@@ -158,6 +158,91 @@ html { scroll-behavior: smooth; }
   100% { opacity: 1; filter: grayscale(0%); transform: scale(1); }
 }
 
+/* ── Topic Grid ── */
+.topic-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .topic-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .topic-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* "Up Next" badge on recommended topic */
+.topic-up-next {
+  border-color: var(--brand-600) !important;
+  box-shadow: 0 0 0 1px var(--brand-600), 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+.up-next-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--brand-600);
+  color: var(--text-inverse);
+}
+
+/* PRIMM type chips */
+.primm-chip {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.primm-chip-predict { background: #3b82f6; }
+.primm-chip-run { background: #22c55e; }
+.primm-chip-investigate { background: #f59e0b; }
+.primm-chip-modify { background: #8b5cf6; }
+.primm-chip-make { background: #ec4899; }
+
+/* Exercise step indicator */
+.step-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.step-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: transparent;
+  transition: all 0.2s ease;
+}
+.step-dot:hover {
+  border-color: var(--brand-600);
+}
+.step-dot.step-current {
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+}
+.step-dot.step-complete {
+  background: var(--accent-success);
+  border-color: var(--accent-success);
+}
+
+/* Quick Practice card */
+.quick-practice-card {
+  background: linear-gradient(135deg, var(--brand-50), var(--surface-raised));
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+}
+.quick-practice-card:hover {
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
 /* Subtle dot-grid background for main views */
 .bg-dotgrid {
   background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
