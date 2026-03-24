@@ -144,7 +144,8 @@ var Gamification = (function () {
             activityHistory: [],
             selectedPerks: {},
             claimedFlags: [],
-            completedChallenges: {}
+            completedChallenges: {},
+            spinHistory: {}
         };
     }
 
@@ -1333,6 +1334,33 @@ var Gamification = (function () {
     }
 
     /* ═══════════════════════════════════════════
+       SPIN WHEEL & CHEST REWARDS
+       ═══════════════════════════════════════════ */
+
+    function recordSpin(topicId, xp) {
+        var data = _load();
+        if (!data.spinHistory) data.spinHistory = {};
+        data.spinHistory[topicId] = { xp: xp, date: _today() };
+        data.totalXP += xp;
+        data.weeklyXP += xp;
+        _save(data);
+        return data;
+    }
+
+    function hasSpun(topicId) {
+        var data = _load();
+        return data.spinHistory && data.spinHistory[topicId];
+    }
+
+    function recordChestReward(xp) {
+        var data = _load();
+        data.totalXP += xp;
+        data.weeklyXP += xp;
+        _save(data);
+        return data;
+    }
+
+    /* ═══════════════════════════════════════════
        EXPORT
        ═══════════════════════════════════════════ */
 
@@ -1364,6 +1392,9 @@ var Gamification = (function () {
         secret: secret,
         completeChallenge: completeChallenge,
         isChallengeComplete: isChallengeComplete,
+        recordSpin: recordSpin,
+        hasSpun: hasSpun,
+        recordChestReward: recordChestReward,
         BADGES: BADGES,
         LEVELS: LEVELS,
         XP_REWARDS: XP_REWARDS

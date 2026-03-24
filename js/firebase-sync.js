@@ -370,6 +370,7 @@ var FirebaseSync = (function () {
             weekStartDate: profile.weekStartDate || "",
             claimedFlags: rawGameData.claimedFlags || [],
             completedChallenges: rawGameData.completedChallenges || {},
+            spinHistory: rawGameData.spinHistory || {},
             lastSynced: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: new Date().toISOString()
         };
