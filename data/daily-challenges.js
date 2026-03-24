@@ -7,7 +7,7 @@ var DAILY_CHALLENGES = [
     instructions: "Write a program that stores your name in a variable and prints it backwards. For example, if name = \"Python\", print \"nohtyP\".",
     starterCode: "# Write your code here\n",
     expectedOutput: null,
-    checkFn: "output.length > 0 && output === output.split('').reverse().join('')",
+    checkFn: "is_palindrome_output",
     hint: "Use slicing: name[::-1]"
   },
   {

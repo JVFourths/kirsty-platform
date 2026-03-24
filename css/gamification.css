@@ -503,3 +503,38 @@
 .tier-script-kiddie { background: #22c55e20; color: #22c55e; }
 .tier-hacker { background: #f59e0b20; color: #f59e0b; }
 .tier-elite { background: #ef444420; color: #ef4444; }
+
+/* ═══════════════════════════════════════
+   REDUCED MOTION — Accessibility
+   Disables all animations for users who
+   prefer reduced motion in OS settings.
+   ═══════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .xp-popup,
+  .xp-popup-animate,
+  .confetti-piece,
+  .level-up-icon,
+  .badge-toast-icon,
+  .streak-fire,
+  .xp-bar-fill::after,
+  .perk-badge-animate,
+  .streak-flame-purple,
+  .lucky-xp.xp-popup-animate,
+  .hacker-card,
+  .matrix-char {
+    animation: none !important;
+  }
+  .xp-popup-animate {
+    opacity: 1;
+    transform: translateY(-60px);
+  }
+  .level-up-modal,
+  .level-up-overlay,
+  .badge-toast,
+  .streak-toast,
+  .stat-card,
+  .badge-card,
+  .level-up-btn {
+    transition-duration: 0.01s !important;
+  }
+}

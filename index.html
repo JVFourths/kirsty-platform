@@ -851,6 +851,7 @@
 
     <script src="data/exercises.js"></script>
     <script src="data/daily-challenges.js"></script>
+    <script src="js/validators.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/gamification.js"></script>
     <script src="js/celebrations.js"></script>
@@ -1432,7 +1433,7 @@
                         email: email,
                         signedInAt: new Date().toISOString()
                     }));
-                } catch (e) {}
+                } catch (e) { console.error('Python Lab: Failed to save teacher session to localStorage:', e); }
 
                 console.log('Python Lab: Teacher signed in as', email);
                 App.navigate('teacher');
@@ -1888,7 +1889,9 @@
             // checkFn
             if (exercise.checkFn) {
                 try {
-                    var passed = new Function('output', 'return (' + exercise.checkFn + ');')(trimmedOutput);
+                    var validator = typeof VALIDATORS !== 'undefined' && VALIDATORS[exercise.checkFn];
+                    if (!validator) throw new Error('Unknown validator: ' + exercise.checkFn);
+                    var passed = validator(trimmedOutput);
                     if (passed) {
                         markComplete();
                         showFeedback(true, 'Well done!', getSuccessMessage());
@@ -2090,7 +2093,7 @@
             var teacherSession = null;
             try {
                 teacherSession = JSON.parse(localStorage.getItem('pythonlab_teacher'));
-            } catch (e) {}
+            } catch (e) { console.error('Python Lab: Failed to read teacher session from localStorage:', e); }
 
             if (!teacherSession) {
                 // Not signed in as teacher, redirect to teacher login

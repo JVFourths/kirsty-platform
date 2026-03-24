@@ -61,7 +61,7 @@ var Celebrations = (function () {
         overlay.className = "level-up-overlay";
         overlay.innerHTML =
             '<div class="level-up-modal">' +
-                '<div class="level-up-icon">' + levelData.icon + '</div>' +
+                '<div class="level-up-icon"><span role="img" aria-label="' + (levelData.ariaLabel || levelData.title) + '">' + levelData.icon + '</span></div>' +
                 '<h2 class="level-up-title">Level Up!</h2>' +
                 '<p class="level-up-level">Level ' + levelData.level + '</p>' +
                 '<p class="level-up-name">' + levelData.title + '</p>' +
@@ -91,7 +91,7 @@ var Celebrations = (function () {
         var toast = document.createElement("div");
         toast.className = "badge-toast";
         toast.innerHTML =
-            '<div class="badge-toast-icon">' + badge.icon + '</div>' +
+            '<div class="badge-toast-icon"><span role="img" aria-label="' + (badge.ariaLabel || badge.title) + '">' + badge.icon + '</span></div>' +
             '<div class="badge-toast-text">' +
                 '<span class="badge-toast-label">Badge Unlocked!</span>' +
                 '<span class="badge-toast-title">' + badge.title + '</span>' +
@@ -114,7 +114,7 @@ var Celebrations = (function () {
         var el = document.createElement("div");
         el.className = "streak-toast";
         el.innerHTML =
-            '<span class="streak-fire">🔥</span>' +
+            '<span class="streak-fire" role="img" aria-label="fire">🔥</span>' +
             '<span class="streak-count">' + count + ' day streak!</span>';
         document.body.appendChild(el);
 
@@ -132,7 +132,7 @@ var Celebrations = (function () {
     function showLuckyXP(xp, targetEl) {
       var popup = document.createElement("div");
       popup.className = "xp-popup lucky-xp";
-      popup.innerHTML = "\u2728 Lucky +" + xp + " XP! \u2728";
+      popup.innerHTML = '<span role="img" aria-label="sparkles">\u2728</span> Lucky +' + xp + ' XP! <span role="img" aria-label="sparkles">\u2728</span>';
 
       var rect = targetEl
           ? targetEl.getBoundingClientRect()

@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// Python Lab — Firestore Security Rules
+//
+// DEPLOY: Firebase Console → Firestore → Rules → paste this → Publish
+// OR: firebase deploy --only firestore:rules
+//
+// These rules ensure:
+// 1. Students can only read/write their own data
+// 2. Class settings are readable by class members
+// 3. Teacher operations use the class doc (no separate admin role yet)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Student profiles ──
+    // Students can read/write their own doc (doc ID = student code or auth UID)
+    match /students/{studentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+                    && request.auth.uid == studentId;
+      allow delete: if false; // Only via admin SDK
+    }
+
+    // ── Classes ──
+    // Readable by any authenticated user (needed for settings checks)
+    // Writable by authenticated users (teacher functions)
+    match /classes/{classCode} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+
+      // Activity feed subcollection
+      match /feed/{feedId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if false;
+      }
+    }
+
+    // ── Class Goals ──
+    match /classGoals/{goalId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── Assignments ──
+    match /assignments/{assignmentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

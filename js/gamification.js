@@ -14,16 +14,16 @@ var Gamification = (function () {
        ═══════════════════════════════════════════ */
 
     var LEVELS = [
-        { level: 1,  title: "Python Beginner",     xpRequired: 0,    icon: "🐣" },
-        { level: 2,  title: "Code Explorer",       xpRequired: 50,   icon: "🔍" },
-        { level: 3,  title: "Script Starter",      xpRequired: 120,  icon: "📝" },
-        { level: 4,  title: "Bug Spotter",         xpRequired: 220,  icon: "🐛" },
-        { level: 5,  title: "Loop Learner",        xpRequired: 350,  icon: "🔄" },
-        { level: 6,  title: "Function Fan",        xpRequired: 500,  icon: "⚡" },
-        { level: 7,  title: "Data Wrangler",       xpRequired: 700,  icon: "📊" },
-        { level: 8,  title: "Algorithm Ace",        xpRequired: 950,  icon: "🧩" },
-        { level: 9,  title: "Python Pro",           xpRequired: 1250, icon: "🏆" },
-        { level: 10, title: "Python Master",        xpRequired: 1600, icon: "👑" }
+        { level: 1,  title: "Python Beginner",     xpRequired: 0,    icon: "🐣", ariaLabel: "hatching chick" },
+        { level: 2,  title: "Code Explorer",       xpRequired: 50,   icon: "🔍", ariaLabel: "magnifying glass" },
+        { level: 3,  title: "Script Starter",      xpRequired: 120,  icon: "📝", ariaLabel: "memo" },
+        { level: 4,  title: "Bug Spotter",         xpRequired: 220,  icon: "🐛", ariaLabel: "bug" },
+        { level: 5,  title: "Loop Learner",        xpRequired: 350,  icon: "🔄", ariaLabel: "arrows circle" },
+        { level: 6,  title: "Function Fan",        xpRequired: 500,  icon: "⚡", ariaLabel: "lightning bolt" },
+        { level: 7,  title: "Data Wrangler",       xpRequired: 700,  icon: "📊", ariaLabel: "bar chart" },
+        { level: 8,  title: "Algorithm Ace",        xpRequired: 950,  icon: "🧩", ariaLabel: "puzzle piece" },
+        { level: 9,  title: "Python Pro",           xpRequired: 1250, icon: "🏆", ariaLabel: "trophy" },
+        { level: 10, title: "Python Master",        xpRequired: 1600, icon: "👑", ariaLabel: "crown" }
     ];
 
     // XP awarded per action
@@ -45,58 +45,58 @@ var Gamification = (function () {
 
     var BADGES = [
         // Getting started
-        { id: "first-run",        title: "Hello World!",    desc: "Run your first program",              icon: "👋",  check: function(d){ return d.totalExercises >= 1; } },
-        { id: "five-done",        title: "High Five",       desc: "Complete 5 exercises",                icon: "🖐️",  check: function(d){ return d.totalExercises >= 5; } },
-        { id: "ten-done",         title: "Perfect 10",      desc: "Complete 10 exercises",               icon: "🔟",  check: function(d){ return d.totalExercises >= 10; } },
-        { id: "twenty-five-done", title: "Quarter Century",  desc: "Complete 25 exercises",              icon: "🎯",  check: function(d){ return d.totalExercises >= 25; } },
+        { id: "first-run",        title: "Hello World!",    desc: "Run your first program",              icon: "👋",  ariaLabel: "waving hand",     check: function(d){ return d.totalExercises >= 1; } },
+        { id: "five-done",        title: "High Five",       desc: "Complete 5 exercises",                icon: "🖐️",  ariaLabel: "raised hand",     check: function(d){ return d.totalExercises >= 5; } },
+        { id: "ten-done",         title: "Perfect 10",      desc: "Complete 10 exercises",               icon: "🔟",  ariaLabel: "number ten",      check: function(d){ return d.totalExercises >= 10; } },
+        { id: "twenty-five-done", title: "Quarter Century",  desc: "Complete 25 exercises",              icon: "🎯",  ariaLabel: "target",          check: function(d){ return d.totalExercises >= 25; } },
 
         // Streaks
-        { id: "streak-3",   title: "On a Roll",       desc: "3-day streak",                             icon: "🔥",  check: function(d){ return d.currentStreak >= 3; } },
-        { id: "streak-7",   title: "Week Warrior",    desc: "7-day streak",                             icon: "⚔️",  check: function(d){ return d.currentStreak >= 7; } },
-        { id: "streak-14",  title: "Fortnight Force",  desc: "14-day streak",                           icon: "💪",  check: function(d){ return d.currentStreak >= 14; } },
-        { id: "streak-30",  title: "Monthly Master",   desc: "30-day streak",                           icon: "🌟",  check: function(d){ return d.currentStreak >= 30; } },
+        { id: "streak-3",   title: "On a Roll",       desc: "3-day streak",                             icon: "🔥",  ariaLabel: "fire",            check: function(d){ return d.currentStreak >= 3; } },
+        { id: "streak-7",   title: "Week Warrior",    desc: "7-day streak",                             icon: "⚔️",  ariaLabel: "crossed swords",  check: function(d){ return d.currentStreak >= 7; } },
+        { id: "streak-14",  title: "Fortnight Force",  desc: "14-day streak",                           icon: "💪",  ariaLabel: "flexed bicep",    check: function(d){ return d.currentStreak >= 14; } },
+        { id: "streak-30",  title: "Monthly Master",   desc: "30-day streak",                           icon: "🌟",  ariaLabel: "glowing star",    check: function(d){ return d.currentStreak >= 30; } },
 
         // PRIMM stages
-        { id: "predictor",    title: "Crystal Ball",     desc: "Get 5 predictions right",               icon: "🔮",  check: function(d){ return d.correctPredictions >= 5; } },
-        { id: "investigator", title: "Code Detective",   desc: "Complete 5 investigate exercises",       icon: "🕵️",  check: function(d){ return d.investigateCount >= 5; } },
-        { id: "modifier",     title: "Remix Artist",     desc: "Complete 5 modify exercises",            icon: "🎨",  check: function(d){ return d.modifyCount >= 5; } },
-        { id: "maker",        title: "Code Creator",     desc: "Complete 5 make exercises",              icon: "🚀",  check: function(d){ return d.makeCount >= 5; } },
+        { id: "predictor",    title: "Crystal Ball",     desc: "Get 5 predictions right",               icon: "🔮",  ariaLabel: "crystal ball",    check: function(d){ return d.correctPredictions >= 5; } },
+        { id: "investigator", title: "Code Detective",   desc: "Complete 5 investigate exercises",       icon: "🕵️",  ariaLabel: "detective",       check: function(d){ return d.investigateCount >= 5; } },
+        { id: "modifier",     title: "Remix Artist",     desc: "Complete 5 modify exercises",            icon: "🎨",  ariaLabel: "artist palette",  check: function(d){ return d.modifyCount >= 5; } },
+        { id: "maker",        title: "Code Creator",     desc: "Complete 5 make exercises",              icon: "🚀",  ariaLabel: "rocket",          check: function(d){ return d.makeCount >= 5; } },
 
         // Bug fixing
-        { id: "bug-squasher",  title: "Bug Squasher",    desc: "Fix 3 errors in your code",             icon: "🐛",  check: function(d){ return d.errorsFixed >= 3; } },
+        { id: "bug-squasher",  title: "Bug Squasher",    desc: "Fix 3 errors in your code",             icon: "🐛",  ariaLabel: "bug",             check: function(d){ return d.errorsFixed >= 3; } },
 
         // Speed
-        { id: "speedster",     title: "Speed Coder",      desc: "Complete an exercise in under 60 secs", icon: "⚡",  check: function(d){ return d.fastCompletions >= 1; } },
+        { id: "speedster",     title: "Speed Coder",      desc: "Complete an exercise in under 60 secs", icon: "⚡",  ariaLabel: "lightning bolt",  check: function(d){ return d.fastCompletions >= 1; } },
 
         // Year group completion
-        { id: "y7-complete",   title: "Year 7 Champion",   desc: "Finish all Year 7 exercises",          icon: "🥇",  check: function(d){ return d.y7Complete; } },
-        { id: "y8-complete",   title: "Year 8 Champion",   desc: "Finish all Year 8 exercises",          icon: "🥈",  check: function(d){ return d.y8Complete; } },
-        { id: "y9-complete",   title: "Year 9 Champion",   desc: "Finish all Year 9 exercises",          icon: "🥉",  check: function(d){ return d.y9Complete; } },
-        { id: "gcse-complete", title: "GCSE Legend",        desc: "Finish all GCSE exercises",            icon: "🏆",  check: function(d){ return d.gcseComplete; } },
+        { id: "y7-complete",   title: "Year 7 Champion",   desc: "Finish all Year 7 exercises",          icon: "🥇",  ariaLabel: "gold medal",      check: function(d){ return d.y7Complete; } },
+        { id: "y8-complete",   title: "Year 8 Champion",   desc: "Finish all Year 8 exercises",          icon: "🥈",  ariaLabel: "silver medal",    check: function(d){ return d.y8Complete; } },
+        { id: "y9-complete",   title: "Year 9 Champion",   desc: "Finish all Year 9 exercises",          icon: "🥉",  ariaLabel: "bronze medal",    check: function(d){ return d.y9Complete; } },
+        { id: "gcse-complete", title: "GCSE Legend",        desc: "Finish all GCSE exercises",            icon: "🏆",  ariaLabel: "trophy",          check: function(d){ return d.gcseComplete; } },
 
         // Mystery badges (hidden until earned)
-        { id: "night-owl", title: "Night Owl", desc: "Complete an exercise after 6pm", icon: "🦉", hidden: true, check: function() { return false; } },
-        { id: "early-bird", title: "Early Bird", desc: "Complete an exercise before 8am", icon: "🐦", hidden: true, check: function() { return false; } },
-        { id: "speed-demon", title: "Speed Demon", desc: "Complete 5 exercises in one session", icon: "⚡", hidden: true, check: function() { return false; } },
-        { id: "perfectionist", title: "Perfectionist", desc: "10 correct predictions in a row", icon: "💎", hidden: true, check: function() { return false; } },
-        { id: "marathon-runner", title: "Marathon Runner", desc: "Spend 60+ minutes in one session", icon: "🏃", hidden: true, check: function() { return false; } },
+        { id: "night-owl", title: "Night Owl", desc: "Complete an exercise after 6pm", icon: "🦉", ariaLabel: "owl", hidden: true, check: function() { return false; } },
+        { id: "early-bird", title: "Early Bird", desc: "Complete an exercise before 8am", icon: "🐦", ariaLabel: "bird", hidden: true, check: function() { return false; } },
+        { id: "speed-demon", title: "Speed Demon", desc: "Complete 5 exercises in one session", icon: "⚡", ariaLabel: "lightning bolt", hidden: true, check: function() { return false; } },
+        { id: "perfectionist", title: "Perfectionist", desc: "10 correct predictions in a row", icon: "💎", ariaLabel: "gem", hidden: true, check: function() { return false; } },
+        { id: "marathon-runner", title: "Marathon Runner", desc: "Spend 60+ minutes in one session", icon: "🏃", ariaLabel: "runner", hidden: true, check: function() { return false; } },
 
         // Weekly Champion badges
-        { id: "weekly-champion-bronze", title: "Weekly Champion", desc: "Earned your first Weekly Chest", icon: "🥉", check: function(d) { return d.weeklyChestsEarned >= 1; } },
-        { id: "weekly-champion-silver", title: "Weekly Champion II", desc: "Earned 3 Weekly Chests", icon: "🥈", check: function(d) { return d.weeklyChestsEarned >= 3; } },
-        { id: "weekly-champion-gold", title: "Weekly Champion III", desc: "Earned 5 Weekly Chests", icon: "🥇", check: function(d) { return d.weeklyChestsEarned >= 5; } },
+        { id: "weekly-champion-bronze", title: "Weekly Champion", desc: "Earned your first Weekly Chest", icon: "🥉", ariaLabel: "bronze medal", check: function(d) { return d.weeklyChestsEarned >= 1; } },
+        { id: "weekly-champion-silver", title: "Weekly Champion II", desc: "Earned 3 Weekly Chests", icon: "🥈", ariaLabel: "silver medal", check: function(d) { return d.weeklyChestsEarned >= 3; } },
+        { id: "weekly-champion-gold", title: "Weekly Champion III", desc: "Earned 5 Weekly Chests", icon: "🥇", ariaLabel: "gold medal", check: function(d) { return d.weeklyChestsEarned >= 5; } },
 
         // Class goal
-        { id: "team-player", title: "Team Player", desc: "Class goal completed together!", icon: "🤝" },
+        { id: "team-player", title: "Team Player", desc: "Class goal completed together!", icon: "🤝", ariaLabel: "handshake" },
 
         // CTF badges
-        { id: "ctf-script-kiddie", title: "Script Kiddie", desc: "Complete your first CTF challenge", icon: "\uD83D\uDCBB", ctf: true, check: function() { return false; } },
-        { id: "ctf-white-hat", title: "White Hat", desc: "Complete 3 CTF challenges", icon: "\uD83C\uDFA9", ctf: true, check: function() { return false; } },
-        { id: "ctf-code-breaker", title: "Code Breaker", desc: "Complete a cipher challenge", icon: "\uD83D\uDD13", ctf: true, check: function() { return false; } },
-        { id: "ctf-packet-sniffer", title: "Packet Sniffer", desc: "Complete a discovery challenge", icon: "\uD83D\uDD0D", ctf: true, check: function() { return false; } },
-        { id: "ctf-zero-day", title: "Zero Day", desc: "Complete all CTF challenges", icon: "\uD83C\uDFF4", ctf: true, check: function() { return false; } },
-        { id: "ctf-egg-hunter", title: "Easter Egg Hunter", desc: "Find 3 Easter eggs", icon: "\uD83E\uDD5A", ctf: true, check: function() { return false; } },
-        { id: "ctf-full-recon", title: "Full Recon", desc: "Find all Easter eggs", icon: "\uD83D\uDD75\uFE0F", ctf: true, check: function() { return false; } }
+        { id: "ctf-script-kiddie", title: "Script Kiddie", desc: "Complete your first CTF challenge", icon: "\uD83D\uDCBB", ariaLabel: "laptop", ctf: true, check: function() { return false; } },
+        { id: "ctf-white-hat", title: "White Hat", desc: "Complete 3 CTF challenges", icon: "\uD83C\uDFA9", ariaLabel: "top hat", ctf: true, check: function() { return false; } },
+        { id: "ctf-code-breaker", title: "Code Breaker", desc: "Complete a cipher challenge", icon: "\uD83D\uDD13", ariaLabel: "unlocked lock", ctf: true, check: function() { return false; } },
+        { id: "ctf-packet-sniffer", title: "Packet Sniffer", desc: "Complete a discovery challenge", icon: "\uD83D\uDD0D", ariaLabel: "magnifying glass", ctf: true, check: function() { return false; } },
+        { id: "ctf-zero-day", title: "Zero Day", desc: "Complete all CTF challenges", icon: "\uD83C\uDFF4", ariaLabel: "black flag", ctf: true, check: function() { return false; } },
+        { id: "ctf-egg-hunter", title: "Easter Egg Hunter", desc: "Find 3 Easter eggs", icon: "\uD83E\uDD5A", ariaLabel: "egg", ctf: true, check: function() { return false; } },
+        { id: "ctf-full-recon", title: "Full Recon", desc: "Find all Easter eggs", icon: "\uD83D\uDD75\uFE0F", ariaLabel: "detective", ctf: true, check: function() { return false; } }
     ];
 
     /* ═══════════════════════════════════════════
@@ -184,34 +184,44 @@ var Gamification = (function () {
     function _save(data) {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        } catch (e) {}
+        } catch (e) { console.error("Python Lab: Failed to save game state to localStorage:", e); }
     }
 
     /* ═══════════════════════════════════════════
        DATE HELPERS
        ═══════════════════════════════════════════ */
 
+    /** Format a Date as "YYYY-MM-DD" in local time. */
+    function _localDateStr(d) {
+        var y = d.getFullYear();
+        var m = d.getMonth() + 1;
+        var day = d.getDate();
+        return y + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+    }
+
     function _today() {
-        return new Date().toISOString().split("T")[0]; // "2026-03-15"
+        return _localDateStr(new Date());
     }
 
     function _yesterday() {
         var d = new Date();
         d.setDate(d.getDate() - 1);
-        return d.toISOString().split("T")[0];
+        return _localDateStr(d);
     }
 
     function _thisMonth() {
-        return new Date().toISOString().slice(0, 7); // "2026-03"
+        var d = new Date();
+        var m = d.getMonth() + 1;
+        return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m;
     }
 
     function _weekStart() {
-        // Monday of the current week
+        // Monday of the current week in local time
         var d = new Date();
-        var day = d.getDay();
-        var diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        var monday = new Date(d.setDate(diff));
-        return monday.toISOString().split("T")[0];
+        var day = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+        var diff = day === 0 ? -6 : 1 - day; // offset to reach Monday
+        var monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
+        return _localDateStr(monday);
     }
 
     /* ═══════════════════════════════════════════
@@ -1049,7 +1059,7 @@ var Gamification = (function () {
         for (var id in data.completedExercises) {
             var ex = data.completedExercises[id];
             if (ex.timestamp) {
-                var exDate = new Date(ex.timestamp).toISOString().split("T")[0];
+                var exDate = _localDateStr(new Date(ex.timestamp));
                 if (exDate === _today()) todayExercises++;
             }
         }

@@ -258,6 +258,7 @@
 
     <script src="data/exercises.js"></script>
     <script src="data/daily-challenges.js"></script>
+    <script src="js/validators.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/gamification.js"></script>
     <script src="js/celebrations.js"></script>
@@ -719,7 +720,9 @@ sys.stderr = io.StringIO()
             // Check with checkFn (custom validation)
             if (exercise.checkFn) {
                 try {
-                    var passed = new Function("output", "return (" + exercise.checkFn + ");")(trimmedOutput);
+                    var validator = typeof VALIDATORS !== "undefined" && VALIDATORS[exercise.checkFn];
+                    if (!validator) throw new Error("Unknown validator: " + exercise.checkFn);
+                    var passed = validator(trimmedOutput);
                     if (passed) {
                         markComplete();
                         showFeedback(true, "Well done!", getSuccessMessage());

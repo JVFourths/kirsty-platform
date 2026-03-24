@@ -120,3 +120,15 @@ html { scroll-behavior: smooth; }
   50% { transform: scale(1.02); }
   100% { opacity: 1; filter: grayscale(0%); transform: scale(1); }
 }
+
+/* Reduced motion — Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .loading-dot,
+  .topic-unlocking {
+    animation: none !important;
+  }
+  .exercise-card,
+  .topic-unlocking {
+    transition-duration: 0.01s !important;
+  }
+}

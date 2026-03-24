@@ -139,7 +139,7 @@ var FirebaseSync = (function () {
                     try {
                         localStorage.setItem(PENDING_EMAIL_KEY, email);
                         localStorage.setItem(PENDING_CLASS_KEY, classCode);
-                    } catch (e) {}
+                    } catch (e) { console.error("Python Lab: Failed to save pending email to localStorage:", e); }
 
                     console.log("Python Lab: Magic link sent to", email);
                     return true;
@@ -165,7 +165,7 @@ var FirebaseSync = (function () {
         var email = null;
         try {
             email = localStorage.getItem(PENDING_EMAIL_KEY);
-        } catch (e) {}
+        } catch (e) { console.error("Python Lab: Failed to read pending email from localStorage:", e); }
 
         if (!email) {
             // If the student is on a different device/browser, ask for email
@@ -185,7 +185,7 @@ var FirebaseSync = (function () {
                     // Clean up pending data
                     localStorage.removeItem(PENDING_EMAIL_KEY);
                     localStorage.removeItem(PENDING_CLASS_KEY);
-                } catch (e) {}
+                } catch (e) { console.error("Python Lab: Failed to clean up pending data from localStorage:", e); }
 
                 // Save student identity
                 var student = {
@@ -286,7 +286,7 @@ var FirebaseSync = (function () {
     function saveStudent(data) {
         try {
             localStorage.setItem(STUDENT_KEY, JSON.stringify(data));
-        } catch (e) {}
+        } catch (e) { console.error("Python Lab: Failed to save student identity to localStorage:", e); }
     }
 
     function isLoggedIn() {
@@ -334,7 +334,7 @@ var FirebaseSync = (function () {
         _currentUser = null;
 
         if (_enabled && auth) {
-            auth.signOut().catch(function () {});
+            auth.signOut().catch(function (e) { console.error("Python Lab: Firebase sign-out failed:", e); });
         }
     }
 
@@ -675,12 +675,14 @@ var FirebaseSync = (function () {
     function getLeaderboard(classCode) {
       if (!_enabled || !db) return Promise.resolve([]);
 
-      // Calculate current week start to filter out stale data
+      // Calculate current week start in local time
       var now = new Date();
       var day = now.getDay();
-      var diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      var monday = new Date(now.getFullYear(), now.getMonth(), diff);
-      var currentWeekStart = monday.toISOString().split("T")[0];
+      var diff = day === 0 ? -6 : 1 - day;
+      var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
+      var m = monday.getMonth() + 1;
+      var dd = monday.getDate();
+      var currentWeekStart = monday.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (dd < 10 ? "0" : "") + dd;
 
       return db.collection("students")
         .where("classCode", "==", classCode)
@@ -882,7 +884,7 @@ var FirebaseSync = (function () {
 
                 try {
                     localStorage.setItem("pythonlab_game", JSON.stringify(gameData));
-                } catch (e) {}
+                } catch (e) { console.error("Python Lab: Failed to save game data to localStorage:", e); }
 
                 // Restore completed exercises into progress
                 if (data.completedExerciseIds && data.completedExerciseIds.length > 0) {
@@ -903,7 +905,7 @@ var FirebaseSync = (function () {
 
                     try {
                         localStorage.setItem("pythonlab_progress", JSON.stringify(progressData));
-                    } catch (e) {}
+                    } catch (e) { console.error("Python Lab: Failed to save exercise progress to localStorage:", e); }
                 }
             }
 

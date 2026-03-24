@@ -47,7 +47,7 @@ var EXERCISES = {
                         instructions: "Change the code below so it prints YOUR name instead of 'Python'. For example: Hello, my name is Alex!",
                         starterCode: 'print("Hello, my name is Python!")',
                         expectedOutput: null,
-                        checkFn: "output.startsWith('Hello, my name is') && output !== 'Hello, my name is Python!'",
+                        checkFn: "starts_with_hello_not_python",
                         hint: "Change the text inside the speech marks to include your own name."
                     },
                     {
@@ -57,7 +57,7 @@ var EXERCISES = {
                         instructions: "Write a program that prints three lines:\n1. Your name\n2. Your favourite colour\n3. Your favourite food\n\nEach should be on a separate line.",
                         starterCode: "# Write your program below\n",
                         expectedOutput: null,
-                        checkFn: "output.trim().split('\\n').length >= 3",
+                        checkFn: "at_least_3_lines",
                         hint: "Use three separate print() statements, one for each line."
                     }
                 ]
@@ -111,7 +111,7 @@ var EXERCISES = {
                         instructions: "Create variables for:\n- Your first name\n- Your age\n- Your favourite number\n\nThen print a sentence using all three variables.",
                         starterCode: "# Create your variables here\n\n# Print a sentence using them\n",
                         expectedOutput: null,
-                        checkFn: "output.trim().length > 10",
+                        checkFn: "output_longer_than_10",
                         hint: "Create variables like: name = \"Alex\" then use print() with f-strings or + to join them together."
                     }
                 ]
@@ -129,7 +129,7 @@ var EXERCISES = {
                         instructions: "Look at this code. What do you think will happen when it runs? (Note: in this environment, input() will use a popup box.)",
                         starterCode: 'name = input("What is your name? ")\nprint("Hello, " + name + "!")',
                         expectedOutput: null,
-                        checkFn: "output.includes('Hello,')",
+                        checkFn: "includes_hello_comma",
                         hint: "input() asks the user to type something. Whatever they type gets stored in the variable."
                     },
                     {
@@ -139,7 +139,7 @@ var EXERCISES = {
                         instructions: "Run this code and enter a number when asked. Then try entering text instead of a number — what happens?",
                         starterCode: 'age = input("How old are you? ")\nnext_year = int(age) + 1\nprint("Next year you will be " + str(next_year))',
                         expectedOutput: null,
-                        checkFn: "output.includes('Next year')",
+                        checkFn: "includes_next_year",
                         hint: "input() always gives you text. You need int() to convert it to a number for maths."
                     },
                     {
@@ -149,7 +149,7 @@ var EXERCISES = {
                         instructions: "Write a program that:\n1. Asks the user for their name\n2. Asks the user for their favourite colour\n3. Prints: '[Name] likes [colour]!'\n\nFor example: Alex likes blue!",
                         starterCode: "# Ask for the user's name\n\n# Ask for their favourite colour\n\n# Print the result\n",
                         expectedOutput: null,
-                        checkFn: "output.includes('likes')",
+                        checkFn: "includes_likes",
                         hint: "Use input() twice to get two pieces of information, store them in variables, then print them together."
                     }
                 ]
@@ -201,7 +201,7 @@ var EXERCISES = {
                         instructions: "Write a program that:\n1. Asks 'What is the capital of France?'\n2. If the answer is 'Paris', print 'Correct!'\n3. Otherwise, print 'Wrong! The answer is Paris.'",
                         starterCode: "# Ask the question\n\n# Check the answer\n",
                         expectedOutput: null,
-                        checkFn: "output.includes('Correct') || output.includes('Wrong')",
+                        checkFn: "includes_correct_or_wrong",
                         hint: "Use input() to get the answer, then use if/else to check if it equals 'Paris'."
                     }
                 ]
@@ -237,7 +237,7 @@ var EXERCISES = {
                         instructions: "Write a program that prints the 7 times table from 7 x 1 up to 7 x 12.\n\nOutput should look like:\n7 x 1 = 7\n7 x 2 = 14\n...and so on.",
                         starterCode: "# Print the 7 times table\n",
                         expectedOutput: null,
-                        checkFn: "output.includes('7 x 1 = 7') && output.includes('7 x 12 = 84')",
+                        checkFn: "times_table_7",
                         hint: "Use a for loop: for i in range(1, 13) and print(f\"7 x {i} = {7 * i}\")"
                     }
                 ]
@@ -321,7 +321,7 @@ var EXERCISES = {
                         instructions: "This code validates that a mark is between 0 and 100. Predict what happens if you enter 150.",
                         starterCode: 'mark = int(input("Enter a mark (0-100): "))\n\nwhile mark < 0 or mark > 100:\n    print("Invalid! Must be between 0 and 100.")\n    mark = int(input("Enter a mark (0-100): "))\n\nprint("Mark accepted:", mark)',
                         expectedOutput: null,
-                        checkFn: "output.includes('Mark accepted')",
+                        checkFn: "includes_mark_accepted",
                         hint: "If you enter 150, the while condition (150 < 0 or 150 > 100) is True, so it asks again."
                     },
                     {
@@ -331,7 +331,7 @@ var EXERCISES = {
                         instructions: "Write a program that:\n1. Asks for a password\n2. Checks it is at least 8 characters long\n3. Checks it contains at least one number\n4. Prints 'Strong password' or 'Weak password'\n\n(AQA spec ref: 3.2.7 — Input validation & authentication)",
                         starterCode: "# Get the password\n\n# Check length and if it contains a number\n\n# Print the result\n",
                         expectedOutput: null,
-                        checkFn: "output.includes('password')",
+                        checkFn: "includes_password",
                         hint: "Use len() for length. To check for a number, loop through each character and use .isdigit()"
                     }
                 ]
