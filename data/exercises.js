@@ -48,7 +48,8 @@ var EXERCISES = {
                         starterCode: 'print("Hello, my name is Python!")',
                         expectedOutput: null,
                         checkFn: "starts_with_hello_not_python",
-                        hint: "Change the text inside the speech marks to include your own name."
+                        hint: "Change the text inside the speech marks to include your own name.",
+                        workedExample: "# Example: Change the greeting\nprint(\"Hello, my name is Alex!\")\n# Output: Hello, my name is Alex!"
                     },
                     {
                         id: "y7-hello-4",
@@ -58,7 +59,8 @@ var EXERCISES = {
                         starterCode: "# Write your program below\n",
                         expectedOutput: null,
                         checkFn: "at_least_3_lines",
-                        hint: "Use three separate print() statements, one for each line."
+                        hint: "Use three separate print() statements, one for each line.",
+                        workedExample: "# Example: Print three lines about yourself\nprint(\"Alex\")\nprint(\"Blue\")\nprint(\"Pizza\")"
                     }
                 ]
             },
@@ -112,7 +114,8 @@ var EXERCISES = {
                         starterCode: "# Create your variables here\n\n# Print a sentence using them\n",
                         expectedOutput: null,
                         checkFn: "output_longer_than_10",
-                        hint: "Create variables like: name = \"Alex\" then use print() with f-strings or + to join them together."
+                        hint: "Create variables like: name = \"Alex\" then use print() with f-strings or + to join them together.",
+                        workedExample: "# Example using f-strings:\nname = \"Alex\"\nage = 13\nfav = 7\nprint(f\"My name is {name}, I am {age}, and my number is {fav}\")"
                     }
                 ]
             },
@@ -150,7 +153,8 @@ var EXERCISES = {
                         starterCode: "# Ask for the user's name\n\n# Ask for their favourite colour\n\n# Print the result\n",
                         expectedOutput: null,
                         checkFn: "includes_likes",
-                        hint: "Use input() twice to get two pieces of information, store them in variables, then print them together."
+                        hint: "Use input() twice to get two pieces of information, store them in variables, then print them together.",
+                        workedExample: "# Example structure:\ncolour = input(\"What is your favourite colour? \")\nprint(\"You like \" + colour + \"!\")"
                     }
                 ]
             }
@@ -202,7 +206,8 @@ var EXERCISES = {
                         starterCode: "# Ask the question\n\n# Check the answer\n",
                         expectedOutput: null,
                         checkFn: "includes_correct_or_wrong",
-                        hint: "Use input() to get the answer, then use if/else to check if it equals 'Paris'."
+                        hint: "Use input() to get the answer, then use if/else to check if it equals 'Paris'.",
+                        workedExample: "# Example quiz:\nanswer = input(\"What is 2 + 2? \")\nif answer == \"4\":\n    print(\"Correct!\")\nelse:\n    print(\"Wrong! The answer is 4.\")"
                     }
                 ]
             },
@@ -238,7 +243,8 @@ var EXERCISES = {
                         starterCode: "# Print the 7 times table\n",
                         expectedOutput: null,
                         checkFn: "times_table_7",
-                        hint: "Use a for loop: for i in range(1, 13) and print(f\"7 x {i} = {7 * i}\")"
+                        hint: "Use a for loop: for i in range(1, 13) and print(f\"7 x {i} = {7 * i}\")",
+                        workedExample: "# Example: 5 times table\nfor i in range(1, 13):\n    print(f\"5 x {i} = {5 * i}\")"
                     }
                 ]
             }
@@ -271,7 +277,8 @@ var EXERCISES = {
                         instructions: "Write a function called 'area_of_rectangle' that takes width and height as parameters and returns the area. Then call it with width=5 and height=3 and print the result.",
                         starterCode: "# Define your function here\n\n# Call it and print the result\n",
                         expectedOutput: "15",
-                        hint: "def area_of_rectangle(width, height): then return width * height"
+                        hint: "def area_of_rectangle(width, height): then return width * height",
+                        workedExample: "# Example function:\ndef area_of_circle(radius):\n    return 3.14 * radius * radius\n\nresult = area_of_circle(5)\nprint(result)"
                     }
                 ]
             },
