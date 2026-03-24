@@ -304,7 +304,8 @@ var EXERCISES = {
                         instructions: "Write a program that has a list of 5 test scores, then finds and prints the highest score. Don't use the built-in max() function — use a loop instead.",
                         starterCode: 'scores = [67, 89, 45, 92, 73]\n\n# Find the highest score using a loop\n',
                         expectedOutput: "92",
-                        hint: "Set highest = scores[0], then loop through each score — if it's bigger than highest, update highest."
+                        hint: "Set highest = scores[0], then loop through each score — if it's bigger than highest, update highest.",
+                        workedExample: "# Example: Find smallest\nnums = [8, 3, 12, 1, 9]\nsmallest = nums[0]\nfor n in nums:\n    if n < smallest:\n        smallest = n\nprint(smallest)"
                     }
                 ]
             }
@@ -339,7 +340,8 @@ var EXERCISES = {
                         starterCode: "# Get the password\n\n# Check length and if it contains a number\n\n# Print the result\n",
                         expectedOutput: null,
                         checkFn: "includes_password",
-                        hint: "Use len() for length. To check for a number, loop through each character and use .isdigit()"
+                        hint: "Use len() for length. To check for a number, loop through each character and use .isdigit()",
+                        workedExample: "# Example: Username validation\nusername = input(\"Enter username: \")\nif len(username) >= 3 and len(username) <= 15:\n    print(\"Valid username\")\nelse:\n    print(\"Username must be 3-15 characters\")"
                     }
                 ]
             },
