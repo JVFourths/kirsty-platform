@@ -631,16 +631,16 @@
                 </div>
 
                 <!-- Navigation -->
-                <div class="flex items-center justify-between pt-4 border-t border-slate-200">
-                    <button id="prev-btn" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <div class="flex items-center justify-between pt-5 border-t border-slate-200 gap-3">
+                    <button id="prev-btn" class="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-base font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                         </svg>
                         Previous
                     </button>
-                    <button id="next-btn" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-brand-600 hover:text-brand-700 hover:bg-brand-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                    <button id="next-btn" class="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-base font-bold text-white bg-brand-600 hover:bg-brand-700 border border-brand-600 shadow-sm transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
                         Next
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                         </svg>
                     </button>
@@ -1831,11 +1831,16 @@
             // Predict
             if (exercise.type === 'predict' && exercise.expectedOutput !== null) {
                 var prediction = document.getElementById('prediction-input').value.trim();
-                if (prediction && prediction === exercise.expectedOutput.trim()) {
+                if (!prediction) {
+                    showFeedback(false, 'Write your prediction first', 'Type what you think the code will print before running it.');
+                    return;
+                }
+                var normPred = function (s) { return s.trim().replace(/\s+/g, ' ').toLowerCase(); };
+                if (normPred(prediction) === normPred(exercise.expectedOutput)) {
                     markComplete({ predictionCorrect: true });
                     showFeedback(true, 'Brilliant!', 'Your prediction was spot on.');
                     return;
-                } else if (prediction) {
+                } else {
                     showFeedback(false, 'Not quite', "Your prediction didn't match the output. Compare them \u2014 can you see why?");
                     return;
                 }
@@ -1875,9 +1880,10 @@
                 return;
             }
 
-            // Modify & Make: check expectedOutput
+            // Modify & Make: check expectedOutput (normalised — tolerant of whitespace and case)
             if (exercise.expectedOutput !== null) {
-                if (trimmedOutput === exercise.expectedOutput.trim()) {
+                var normalise = function (s) { return s.trim().replace(/\s+/g, ' ').toLowerCase(); };
+                if (normalise(trimmedOutput) === normalise(exercise.expectedOutput)) {
                     markComplete();
                     showFeedback(true, 'Correct!', getSuccessMessage());
                 } else {
