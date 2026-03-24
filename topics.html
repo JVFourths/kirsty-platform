@@ -66,7 +66,7 @@
         </div>
 
         <!-- Topic cards container -->
-        <div id="topic-list" class="space-y-5">
+        <div id="topic-list" class="topic-grid">
             <!-- Filled by JS -->
         </div>
 
@@ -158,11 +158,31 @@
 
         function renderTopics() {
             container.innerHTML = "";
+            var firstIncompleteIdx = -1;
             for (var t = 0; t < topics.length; t++) {
                 var topic = topics[t];
                 var stats = (typeof Gamification !== "undefined" ? Gamification : Progress).countForTopic(yearKey, topic.id);
                 var pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
                 var iconSvg = icons[topic.icon] || icons.list;
+
+                // PRIMM chips
+                var exs = topic.exercises || [];
+                var types = {};
+                for (var ec = 0; ec < exs.length; ec++) { types[exs[ec].type] = true; }
+                var typeNames = { predict: "Predict", run: "Run", investigate: "Investigate", modify: "Modify", make: "Make" };
+                var chipsHtml = '<div class="flex gap-1 mt-2">';
+                for (var tp in types) { chipsHtml += '<span class="primm-chip primm-chip-' + tp + '" title="' + (typeNames[tp] || tp) + '"></span>'; }
+                chipsHtml += '</div>';
+
+                // Progress fraction
+                var doneCount = 0;
+                for (var e2 = 0; e2 < exs.length; e2++) {
+                    if (typeof Progress !== "undefined" && Progress.isComplete(exs[e2].id)) doneCount++;
+                }
+                var progressHtml = '<p class="text-xs mt-1" style="color:var(--text-muted)">' + doneCount + '/' + exs.length + ' complete</p>';
+
+                // Track first incomplete topic for Up Next
+                if (firstIncompleteIdx === -1 && doneCount < exs.length) firstIncompleteIdx = t;
 
                 // Check lock state
                 var isUnlocked = Progress.isTopicUnlocked(yearKey, t);
@@ -215,6 +235,8 @@
                             '<div class="flex-1 min-w-0">' +
                                 '<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">' + topic.title + '</h2>' +
                                 '<p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">' + topic.description + '</p>' +
+                                chipsHtml +
+                                progressHtml +
                                 '<div class="flex items-center gap-3 mt-3">' +
                                     '<div class="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">' +
                                         '<div class="h-full rounded-full ' + c.barBg + ' transition-all" style="width: ' + pct + '%"></div>' +
@@ -228,6 +250,15 @@
                     '</div>';
 
                 container.insertAdjacentHTML("beforeend", cardHtml);
+            }
+
+            // Mark the first incomplete topic as "Up Next"
+            if (firstIncompleteIdx >= 0) {
+                var cards = container.children;
+                if (cards[firstIncompleteIdx]) {
+                    cards[firstIncompleteIdx].classList.add("topic-up-next", "relative");
+                    cards[firstIncompleteIdx].insertAdjacentHTML("afterbegin", '<span class="up-next-badge">Up Next</span>');
+                }
             }
         }
 
