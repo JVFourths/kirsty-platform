@@ -136,6 +136,7 @@
                     <span id="primm-badge" class="primm-badge primm-predict">Predict</span>
                     <span id="exercise-number" class="text-xs text-slate-400">Exercise 1 of 4</span>
                 </div>
+                <div id="step-dots" class="step-dots mt-3"></div>
                 <h1 id="exercise-title" class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Exercise Title</h1>
                 <p id="exercise-instructions" class="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line"></p>
             </div>
@@ -380,6 +381,22 @@
         document.getElementById("exercise-number").textContent =
             "Exercise " + (exerciseIndex + 1) + " of " + allExercises.length + " — " + topic.title;
         document.title = exercise.title + " — Python Lab";
+
+        // Step dots
+        var dotsContainer = document.getElementById("step-dots");
+        if (dotsContainer && allExercises) {
+            var dotsHtml = "";
+            for (var d = 0; d < allExercises.length; d++) {
+                var dotEx = allExercises[d];
+                var isCurrent = d === exerciseIndex;
+                var isComplete = typeof Progress !== "undefined" && Progress.isComplete(dotEx.id);
+                var cls = "step-dot";
+                if (isCurrent) cls += " step-current";
+                else if (isComplete) cls += " step-complete";
+                dotsHtml += '<a href="exercise.html?year=' + yearKey + '&topic=' + topicId + '&ex=' + dotEx.id + '" class="' + cls + '" title="' + dotEx.title + '"></a>';
+            }
+            dotsContainer.innerHTML = dotsHtml;
+        }
 
         var badge = document.getElementById("primm-badge");
         badge.className = primmClasses[exercise.type] || "primm-badge";
