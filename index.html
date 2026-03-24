@@ -604,6 +604,10 @@
                         </svg>
                         Hint
                     </button>
+                    <button id="glossary-btn" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-[0.98]">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+                        Glossary
+                    </button>
                 </div>
 
                 <!-- Hint panel -->
@@ -862,6 +866,17 @@
         </div>
     </footer>
 
+    <!-- Glossary Panel -->
+    <div id="glossary-overlay" class="glossary-overlay" onclick="if(event.target===this){this.classList.remove('glossary-open')}">
+        <div class="glossary-panel">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold" style="color:var(--text-primary)">Glossary</h3>
+                <button onclick="document.getElementById('glossary-overlay').classList.remove('glossary-open')" class="text-sm rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Close glossary">&times;</button>
+            </div>
+            <div id="glossary-terms"></div>
+        </div>
+    </div>
+
     <!-- ═══════════════════════════════════════════════════════
          SCRIPTS
          ═══════════════════════════════════════════════════════ -->
@@ -872,6 +887,7 @@
 
     <script src="data/exercises.js"></script>
     <script src="data/daily-challenges.js"></script>
+    <script src="data/glossary.js"></script>
     <script src="js/validators.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/gamification.js"></script>
@@ -1733,6 +1749,8 @@
 
             // Reset panels
             document.getElementById('hint-panel').classList.add('hidden');
+            var existingExample = document.getElementById('hint-panel').querySelector('.worked-example');
+            if (existingExample) existingExample.remove();
             document.getElementById('feedback-panel').classList.add('hidden');
             document.getElementById('comprehension-section').classList.add('hidden');
             document.getElementById('prediction-input').value = '';
@@ -2311,7 +2329,42 @@
         function initEventListeners() {
             // Hint button
             document.getElementById('hint-btn').addEventListener('click', function () {
-                document.getElementById('hint-panel').classList.toggle('hidden');
+                var hp = document.getElementById('hint-panel');
+                hp.classList.toggle('hidden');
+                // Show worked example if available
+                var exercise = _exerciseState.exercise;
+                if (!hp.classList.contains('hidden') && exercise && exercise.workedExample) {
+                    var existing = hp.querySelector('.worked-example');
+                    if (!existing) {
+                        var exampleHtml = '<div class="worked-example"><div class="worked-example-label">Worked Example</div><pre class="worked-example-code">' + exercise.workedExample.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre></div>';
+                        hp.innerHTML += exampleHtml;
+                    }
+                }
+            });
+
+            // Glossary button
+            document.getElementById('glossary-btn').addEventListener('click', function() {
+                var topicId = _exerciseState.topicId || (_viewParams && _viewParams.topic) || '';
+                var terms = (typeof GLOSSARY !== 'undefined' && GLOSSARY[topicId]) || [];
+                var container = document.getElementById('glossary-terms');
+                if (terms.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-muted)" class="text-sm">No glossary terms for this topic yet.</p>';
+                } else {
+                    var html = '';
+                    for (var i = 0; i < terms.length; i++) {
+                        html += '<div class="glossary-term"><div class="glossary-term-name">' + terms[i].term + '</div><div class="glossary-term-def">' + terms[i].definition + '</div></div>';
+                    }
+                    container.innerHTML = html;
+                }
+                document.getElementById('glossary-overlay').classList.add('glossary-open');
+            });
+
+            // Close glossary with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    var overlay = document.getElementById('glossary-overlay');
+                    if (overlay) overlay.classList.remove('glossary-open');
+                }
             });
 
             // Run button
