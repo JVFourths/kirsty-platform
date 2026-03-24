@@ -42,11 +42,11 @@ Define CSS custom properties in `platform.css`:
 }
 ```
 
-Migrate all hardcoded hex values in `platform.css` and `gamification.css` to use these variables. Add `dark:` Tailwind classes to structural HTML elements.
+Migrate all hardcoded hex values in `platform.css`, `gamification.css`, and inline `<style>` blocks in `index.html`/`exercise.html` to use these variables. The `.dark` class on `<html>` makes variables cascade automatically — no `dark:` Tailwind utility classes needed for elements styled via custom CSS. For elements using only Tailwind utilities directly in HTML (e.g. `bg-white`, `text-slate-900`), add `dark:` variants as a secondary layer.
 
 **Toggle:** Button in header (sun/moon icon). JS reads `localStorage.getItem('pythonlab_theme')` on load, falls back to `prefers-color-scheme`, toggles `dark` class on `<html>`.
 
-**Exception:** `.output-panel` stays dark in both modes (terminal aesthetic). `.hacker-card` and `.secrets-section` stay dark (CTF aesthetic).
+**Exceptions (stay dark in both modes):** `.output-panel` (terminal aesthetic), `.hacker-card`, `.secrets-section`, `.ctf-badge` (CTF aesthetic). `challenges.html` header/nav follow the theme but challenge content stays dark.
 
 ### Visual Polish
 
@@ -59,7 +59,7 @@ Migrate all hardcoded hex values in `platform.css` and `gamification.css` to use
 
 | Issue | Fix |
 |-------|-----|
-| `#ef4444` error text fails contrast on dark panel | Change to `#f87171` (red-400) |
+| `#ef4444` error text fails contrast on dark panel | Change to `#f87171` in `platform.css` `.output-panel .error` only. Inline JS `style.color` uses on light backgrounds are acceptable. |
 | `exercise.html` back link hardcodes `year=7` | Read year from URL params dynamically |
 | Focus not managed on SPA navigation | Move focus to view heading on `App.navigate()` |
 | Hidden views visible to screen readers | Add `aria-hidden="true"` to inactive views |
@@ -108,14 +108,17 @@ At the top of the exercise view, render a row of dots representing each exercise
 ### Quick Practice Card
 
 Single card on the home view (below year-group cards) that:
-- Picks one random unanswered exercise from any completed topic
+- Picks one random exercise from any topic that has at least one completion (for revision/practice)
 - Shows exercise title, type badge, and topic name
 - Links directly to that exercise
 - Refreshes on each page load
 
+**Note:** `topics.html` is a standalone legacy page. The primary topic view is `view-topics` inside `index.html` (SPA). Both must receive the grid layout changes for consistency.
+
 ### Files Changed
 
 - `index.html` — topic grid layout, "Up Next" badge, PRIMM chips, quick practice card, step indicator
+- `topics.html` — same grid layout and PRIMM chips for consistency
 - `exercise.html` — step indicator dots
 - `css/platform.css` — grid styles, step indicator styles, "Up Next" badge animation
 - `data/exercises.js` — no changes (data structure already supports this)
@@ -192,7 +195,14 @@ On topic completion (after the summary modal), offer a wheel spin:
 - Result added to total XP and synced to Firestore
 - Visual: colourful wheel with pointer, 3-second spin animation
 
-**Data:** `spinHistory` array added to gamification data to track spins per topic (prevent re-spins).
+**Data:** `spinHistory` object added to gamification data (stored in `pythonlab_game` localStorage alongside `completedExercises`):
+```javascript
+spinHistory: {
+  "y7-hello": { xp: 15, date: "2026-03-24" },
+  "y8-selection": { xp: 50, date: "2026-03-25" }
+}
+// Key = topic ID, value = spin result. One spin per topic, ever.
+```
 
 ### Topic-Complete Celebration
 
@@ -218,6 +228,9 @@ When all weekly missions are complete, show a chest animation:
 - `css/gamification.css` — wheel styles, chest animation keyframes
 - `index.html` — wheel and chest modal HTML
 - `exercise.html` — wheel modal HTML
+- `js/firebase-sync.js` — sync `spinHistory` to Firestore (add to `docData` in `syncProgress()`)
+
+**Note:** All new animations (wheel spin, chest shake, pulsing border) must have `@media (prefers-reduced-motion: reduce)` overrides.
 
 ---
 
