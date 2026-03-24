@@ -1,3 +1,40 @@
+/* ═══════════════════════════════════════════
+   THEME — Semantic colour tokens
+   ═══════════════════════════════════════════ */
+:root {
+  --surface: #ffffff;
+  --surface-raised: #f8fafc;
+  --surface-sunken: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  --brand-50: #eef2ff;
+  --brand-600: #4f46e5;
+  --accent-success: #22c55e;
+  --accent-error: #f87171;
+  --accent-warning: #f59e0b;
+}
+
+.dark {
+  --surface: #0f172a;
+  --surface-raised: #1e293b;
+  --surface-sunken: #020617;
+  --border: #334155;
+  --border-strong: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --text-inverse: #0f172a;
+  --brand-50: #1e1b4b;
+  --brand-600: #818cf8;
+  --accent-success: #4ade80;
+  --accent-error: #f87171;
+  --accent-warning: #fbbf24;
+}
+
 /* Python Lab — Custom styles */
 
 /* Smooth scrolling */
@@ -24,7 +61,7 @@ html { scroll-behavior: smooth; }
 }
 
 .output-panel .error {
-    color: #ef4444;
+    color: #f87171;
 }
 
 .output-panel .success {
@@ -119,6 +156,12 @@ html { scroll-behavior: smooth; }
   0% { opacity: 0.6; filter: grayscale(30%); }
   50% { transform: scale(1.02); }
   100% { opacity: 1; filter: grayscale(0%); transform: scale(1); }
+}
+
+/* Subtle dot-grid background for main views */
+.bg-dotgrid {
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 /* Reduced motion — Accessibility */
