@@ -940,6 +940,9 @@ sys.stderr = io.StringIO()
                 conceptsHtml += '</div>';
             }
 
+            var hasAlreadySpun = typeof Gamification !== 'undefined' && Gamification.hasSpun(tid);
+            var spinBtnHtml = hasAlreadySpun ? '' : '<button id="topic-spin-btn" class="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-red-500">Spin the Wheel!</button>';
+
             overlay.innerHTML = '<div class="topic-complete-modal">' +
                 '<div class="text-4xl mb-3">🎉</div>' +
                 '<h2 class="text-xl font-bold" style="background:linear-gradient(135deg,#f59e0b,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Topic Complete!</h2>' +
@@ -947,12 +950,29 @@ sys.stderr = io.StringIO()
                 conceptsHtml +
                 '<div class="flex gap-3 justify-center mt-4">' +
                 '<button onclick="this.closest(\'.topic-complete-overlay\').remove()" class="rounded-xl px-4 py-2 text-sm font-semibold border border-slate-200 dark:border-slate-600" style="color:var(--text-secondary)">Back to Topics</button>' +
+                spinBtnHtml +
                 '<button onclick="this.closest(\'.topic-complete-overlay\').remove();document.getElementById(\'next-btn\').click()" class="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-500">Keep Going</button>' +
                 '</div></div>';
 
             document.body.appendChild(overlay);
             requestAnimationFrame(function() { overlay.classList.add('visible'); });
             if (typeof Celebrations !== 'undefined') setTimeout(Celebrations.confetti, 200);
+
+            // Spin wheel handler
+            if (!hasAlreadySpun) {
+                var spinBtn = document.getElementById('topic-spin-btn');
+                if (spinBtn) {
+                    spinBtn.addEventListener('click', function() {
+                        overlay.parentNode.removeChild(overlay);
+                        if (typeof Celebrations !== 'undefined') {
+                            Celebrations.showSpinWheel(tid, function(xp) {
+                                if (typeof Gamification !== 'undefined') Gamification.recordSpin(tid, xp);
+                                if (typeof FirebaseSync !== 'undefined') FirebaseSync.syncProgress();
+                            });
+                        }
+                    });
+                }
+            }
         }
 
     })();
